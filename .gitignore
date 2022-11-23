@@ -104,6 +104,8 @@ celerybeat.pid
 # Environments
 .env
 .venv
+.battle-env
+battle-env/
 env/
 venv/
 ENV/
@@ -127,3 +129,6 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+#Pycharm
+.idea
