@@ -6,10 +6,11 @@ import numpy as np
 
 class BattleModel(ap.Model):
 
-    def __init__(self, parameters=None, _run_id=None, **kwargs):
+    def __init__(self, parameters=None, _run_id=None, steps=150, **kwargs):
         super().__init__(parameters, _run_id)
         self.battle_field = None
         self.army = dict()
+        self.steps = steps
 
     def setup(self):
         """ Initiate a list of new agents. """
@@ -27,6 +28,9 @@ class BattleModel(ap.Model):
             self.battle_field.add_agents(regiment, positions=positions_for_soldiers)
             self.army[agent_type].append(regiment)
             regiment.setup_map_binding(self.battle_field)
+
+            # This don t work for dummy_classes
+            regiment.team = agent_type.value[1]
 
             # TODO:
             # Dodać zabezpieczenie przed nakładaniem się wojsk
@@ -47,6 +51,15 @@ class BattleModel(ap.Model):
 
     def step(self):
         """ Call a method for every agent. """
+        def attack(unit, attack_range=1):
+            for neighbor in self.battle_field.neighbors(unit, distance=attack_range).to_list():
+                if neighbor.team != unit.team:
+                    # attack the first found neigbour from opposite team
+                    # break to not attack all neigbours but only the first one
+                    unit.attack(neighbor)
+                    break
+
+        """ Call a method for every agent. """
         for key, value in self.army.items():
             for regiment in value:
                 if key.value[1] == Team.RED:
@@ -54,7 +67,17 @@ class BattleModel(ap.Model):
                 else:
                     regiment.move(1, 0)
 
-        if self.t == 150:
+            # Perform attack
+                # TODO: random unit order, currently first regiment attack fist so it always win
+                # Apparently it doesn t win because dead unit ale still alive
+                for u in regiment:
+                    attack(u)
+
+            # TODO: kill dead units
+
+
+
+        if self.t == self.steps:
             self.stop()
 
     def update(self):
@@ -64,17 +87,25 @@ class BattleModel(ap.Model):
         """ Repord an evaluation measure. """
 
     def return_soldiers_colors(self):
-        colors = {1:'b', 2:'r'}
+        colors = {1:'b', 2:'r', 3:'black'}
         written_colors = []
 
         for key,value in self.army.items():
             if key.value[1] == Team.BLUE:
                 for regiment in value:
                     for agent in regiment:
-                        written_colors.append(colors[1])
+                        # This 'if' doesn t work with dummy classes
+                        if agent.status == 0:
+                            written_colors.append(colors[3])
+                        else:
+                            written_colors.append(colors[1])
+
             else:
                 for regiment in value:
                     for agent in regiment:
-                        written_colors.append(colors[2])
-
+                        # This 'if' doesn t work with dummy classes
+                        if agent.status == 0:
+                            written_colors.append(colors[3])
+                        else:
+                            written_colors.append(colors[2])
         return written_colors

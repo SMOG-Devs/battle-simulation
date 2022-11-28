@@ -1,6 +1,8 @@
 from enum import Enum
 from . import Dummy_Classes
 
+from ..Agent.units import Soldier
+
 FIELD_WIDTH = 300
 FIELD_HEIGHT = 300
 
@@ -19,3 +21,5 @@ class Agent_type(Enum):
     ARCHERS_BLUE = (Dummy_Classes.dummy_archer, Team.BLUE)
     INFANTRY_BLUE = (Dummy_Classes.dummy_infantry, Team.BLUE)
     INFANTRY_RED = (Dummy_Classes.dummy_infantry, Team.RED)
+    SOLDIER_BLUE = (Soldier, Team.BLUE)
+    SOLDIER_RED = (Soldier, Team.RED)
