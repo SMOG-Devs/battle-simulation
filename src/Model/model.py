@@ -3,16 +3,18 @@ from .model_constants import FIELD_WIDTH, FIELD_HEIGHT, Agent_type, Team
 from typing import List, Tuple
 import numpy as np
 from .regiment import Regiment
+import pickle
 
 
 class BattleModel(ap.Model):
 
     def __init__(self, parameters=None, _run_id=None, steps=150, **kwargs):
         super().__init__(parameters, _run_id)
-        self.battle_field = None
+        self.battle_field: ap.Grid = None
         self.army = dict()  # required for self.return_soldiers_color but should be removed in the future
         self.steps = steps
         self.regiments: [Regiment] = []  # list of all regiments
+        self.logs: [[(type, Team, int, int)]] = []  # list of frames, each frame have list of tuples: type, team, status, health
         # model manages regiments, regiments manages units
 
     def setup(self):
@@ -37,25 +39,39 @@ class BattleModel(ap.Model):
 
     def step(self):
         """ Call a method for every regiment. """
+
+        if self.t == 14 or self.t == 15:  # Śmieci
+            print("saving")
+            self._save_frame()
+        print(self.t)
+
         for reg in self.regiments:
             reg.move()
 
         for reg in self.regiments:
             reg.attack()
 
+        for reg in self.regiments:
+            reg.remove_dead()
+
+        for reg in self.regiments:
+            if reg.units_count() <= 0:
+                self.regiments.remove(reg)
+
         if self.t == self.steps:
             self.stop()
             self.end()
+
 
     def update(self):
         """ Record a dynamic variable. """
 
     def end(self):
         """ Report an evaluation measure. """
+        self.save_logs_as_pickle("logs.plk")
         print("END")
 
     def return_soldiers_colors(self):
-        # TODO: refactor right after Sample_dict_model fixes
         colors = {1:'b', 2:'r', 3:'black'}
         written_colors = []
 
@@ -78,4 +94,16 @@ class BattleModel(ap.Model):
                         else:
                             written_colors.append(colors[2])
         return written_colors
+
+    def _save_frame(self):
+        current_frame = []
+        for unit in self.battle_field.agents:
+            current_frame.append((unit.type, unit.team, unit.status, unit.health))
+        self.logs.append(current_frame)
+
+    def save_logs_as_pickle(self, filename):
+        with open(filename, 'wb') as file:
+            pickle.dump(self.logs, file)
+
+
 

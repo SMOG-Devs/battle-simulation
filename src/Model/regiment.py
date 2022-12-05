@@ -42,6 +42,9 @@ class Regiment:
         self.units.team = team
         self.team = team
 
+    def units_count(self) -> int:
+        return len(self.units)
+
     def move(self):
         def distance_to(regiment) -> float:
             # TODO: implement
@@ -102,3 +105,7 @@ class Regiment:
             if not inside_of_grid(unit):
                 continue
             attack(unit)
+
+    def remove_dead(self):
+        # Regiment.battlefield.remove_agents(self.units.select(self.units.health <= 0)) # doesn't work, idk why
+        self.units = self.units.select(self.units.health > 0)

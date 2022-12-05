@@ -22,4 +22,4 @@ def animation_plot(m, p, steps):
 
 
 if __name__ == '__main__':
-    animation_plot(battle_model.BattleModel, sample.sample_model2, 50)
+    animation_plot(battle_model.BattleModel, sample.sample_model2, 80)
