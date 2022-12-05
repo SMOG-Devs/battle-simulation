@@ -51,7 +51,20 @@ class BattleModel(ap.Model):
 
     def step(self):
         """ Call a method for every agent. """
+        # print(self.t)
+        # if self.t == 41:
+        #     print("Warning")
+        def inside_of_grid(unit):
+            return 0 < self.battle_field.positions[unit][0] < FIELD_WIDTH and \
+                   0 < self.battle_field.positions[unit][1] < FIELD_HEIGHT
+
         def attack(unit, attack_range=1):
+            # li = self.battle_field.neighbors(unit, distance=attack_range)
+            # if len(li) < 0:
+            #     print("Error")
+            #     return
+            if not inside_of_grid(unit):
+                return
             for neighbor in self.battle_field.neighbors(unit, distance=attack_range).to_list():
                 if neighbor.team != unit.team:
                     # attack the first found neigbour from opposite team
@@ -72,19 +85,26 @@ class BattleModel(ap.Model):
                 # Apparently it doesn t win because dead unit ale still alive
                 for u in regiment:
                     attack(u)
+                    u.record(u.vars)
 
             # TODO: kill dead units
 
 
-
         if self.t == self.steps:
             self.stop()
+            self.end()
 
     def update(self):
         """ Record a dynamic variable. """
 
     def end(self):
-        """ Repord an evaluation measure. """
+        """ Report an evaluation measure. """
+        print("END")
+        for key, value in self.army.items():
+            for regiment in value:
+                for u in regiment:
+                    print(u.log)
+                    print("-------------------------")
 
     def return_soldiers_colors(self):
         colors = {1:'b', 2:'r', 3:'black'}
@@ -109,3 +129,4 @@ class BattleModel(ap.Model):
                         else:
                             written_colors.append(colors[2])
         return written_colors
+
