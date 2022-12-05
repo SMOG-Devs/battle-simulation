@@ -1,3 +1,6 @@
+# move with keys: w a s d 
+# zoom in/out with keys: k l
+
 import math
 
 import pygame
