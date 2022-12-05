@@ -14,7 +14,7 @@ class BattleModel(ap.Model):
         self.army = dict()  # required for self.return_soldiers_color but should be removed in the future
         self.steps = steps
         self.regiments: [Regiment] = []  # list of all regiments
-        self.logs: [[(type, Team, int, int)]] = []  # list of frames, each frame have list of tuples: type, team, status, health
+        self.logs: [[(type, Team, int, int, (int, int))]] = []  # list of frames, each frame have list of tuples: type, team, status, health, (positionX, positionY)
         # model manages regiments, regiments manages units
 
     def setup(self):
@@ -65,7 +65,7 @@ class BattleModel(ap.Model):
 
     def end(self):
         """ Report an evaluation measure. """
-        self.save_logs_as_pickle("logs.plk")
+        self.save_logs_as_pickle("src\\Visualization\\logs.plk")
         print("END")
 
     def return_soldiers_colors(self):
@@ -95,7 +95,8 @@ class BattleModel(ap.Model):
     def _save_frame(self):
         current_frame = []
         for unit in self.battle_field.agents:
-            current_frame.append((unit.type, unit.team, unit.status, unit.health))
+            current_frame.append((str(unit.type), str(unit.team), unit.status, unit.health,
+                                  self.battle_field.positions[unit]))
         self.logs.append(current_frame)
 
     def save_logs_as_pickle(self, filename):

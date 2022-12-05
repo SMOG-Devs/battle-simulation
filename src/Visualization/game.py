@@ -7,6 +7,7 @@ import pygame
 from camera import Camera
 from UI import Button
 from dummyGrid import GridTest
+import grid
 
 # FPS constants
 FPS = 20
@@ -62,6 +63,8 @@ grid_obj = GridTest(200)
 for i in range(4):
     grid_obj.step()
 
+grid_new = grid.GridPickle(300, 'logs.plk')
+
 # -------- Main Program Loop -----------
 while not done:
     for event in pygame.event.get():  # User did something
@@ -97,18 +100,25 @@ while not done:
     cells_size = math.ceil(screen_size[0] / cells_y)
 
     grid = grid_obj.grid
+    grid = grid_new.get_grid()
     for row in range(cells_x):
         for column in range(cells_y):
             color = WHITE
             if row + camera.x < len(grid[0]) and column + camera.y < len(grid):
                 if grid[row + camera.y][column + camera.x] == 1:
+                    color = BLACK
+                if grid[row + camera.y][column + camera.x] == 2:
                     color = GREEN
+                if grid[row + camera.y][column + camera.x] == 3:
+                    color = RED
             pygame.draw.rect(screen,
                              color,
                              [cells_size * column,
                               cells_size * row,
                               cells_size,
                               cells_size])
+
+    grid_new.step()
     # Draw UI
     for button in buttons:
         button.draw()
@@ -123,9 +133,7 @@ while not done:
     text_rect.center = (400, 700)
     screen.blit(text_surf, text_rect)
 
-
-
-    if frames_counter % update_rate == 0: # update grid once per UPDATE_RATE frames
+    if frames_counter % update_rate == 0:  # update grid once per UPDATE_RATE frames
         grid_obj.step()
 
     clock.tick(FPS)
