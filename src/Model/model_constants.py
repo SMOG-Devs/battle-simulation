@@ -23,3 +23,10 @@ class Agent_type(Enum):
     INFANTRY_RED = (Dummy_Classes.dummy_infantry, Team.RED)
     SOLDIER_BLUE = (Soldier, Team.BLUE)
     SOLDIER_RED = (Soldier, Team.RED)
+
+    # dummies
+    SOLDIER_DUMMY3 = (Soldier, 3)
+    SOLDIER_DUMMY4 = (Soldier, 4)
+
+
+
