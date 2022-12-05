@@ -40,10 +40,6 @@ class BattleModel(ap.Model):
     def step(self):
         """ Call a method for every regiment. """
 
-        if self.t == 14 or self.t == 15:  # Śmieci
-            print("saving")
-            self._save_frame()
-        print(self.t)
 
         for reg in self.regiments:
             reg.move()
@@ -57,6 +53,7 @@ class BattleModel(ap.Model):
         for reg in self.regiments:
             if reg.units_count() <= 0:
                 self.regiments.remove(reg)
+        self._save_frame()
 
         if self.t == self.steps:
             self.stop()
