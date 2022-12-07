@@ -9,6 +9,10 @@ class Team(Enum):
     RED = 0
     BLUE = 1
 
+class Orders(Enum):
+    MoveForward = 0
+    MoveEnemyLongRange = 1
+
 
 class Agent_type(Enum):
     HUSSARS_RED = (Dummy_Classes.dummy_hussar, Team.RED)

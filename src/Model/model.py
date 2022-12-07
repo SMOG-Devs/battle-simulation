@@ -1,7 +1,8 @@
 import agentpy as ap
 from .model_constants import FIELD_WIDTH, FIELD_HEIGHT, Agent_type, Team
-from typing import List, Tuple
+from typing import List, Tuple, Dict
 import numpy as np
+from .MeasureSystem import closestRegiment, centroidOfRegiment
 
 
 class BattleModel(ap.Model):
@@ -9,23 +10,33 @@ class BattleModel(ap.Model):
     def __init__(self, parameters=None, _run_id=None, **kwargs):
         super().__init__(parameters, _run_id)
         self.battle_field = None
-        self.army = dict()
+        self.army_blue = dict()
+        self.army_red = dict()
 
     def setup(self):
         """ Initiate a list of new agents. """
-        self.battle_field = ap.Grid(self, (FIELD_WIDTH, FIELD_HEIGHT), track_empty=True, check_border=False)
+        self.battle_field = ap.Grid(self, (FIELD_WIDTH, FIELD_HEIGHT), track_empty=True, check_border=True)
 
         for key, values in self.p['army_dist'].items():
             self._setup_army(key, values['quantity'], values['position'])
 
     def _setup_army(self, agent_type: Agent_type, quantities: List[int], positions: List[Tuple[int, int]]):
-        self.army[agent_type] = []
+        if agent_type.value[1] == Team.RED:
+            self.army_red[agent_type] = []
+        else:
+            self.army_blue[agent_type] = []
 
         for quantity, position in zip(quantities, positions):
             regiment = ap.AgentList(self, quantity, agent_type.value[0])
+            regiment.speed = 1 #dummy trzeba to później poprawić
             positions_for_soldiers = self._generate_positions(quantity, position)
             self.battle_field.add_agents(regiment, positions=positions_for_soldiers)
-            self.army[agent_type].append(regiment)
+            if agent_type.value[1] == Team.RED:
+                self.army_red[agent_type].append(regiment)
+                regiment.team = Team.RED.value
+            else:
+                self.army_blue[agent_type].append(regiment)
+                regiment.team = Team.BLUE.value
             regiment.setup_map_binding(self.battle_field)
 
             # TODO:
@@ -47,16 +58,34 @@ class BattleModel(ap.Model):
 
     def step(self):
         """ Call a method for every agent. """
-        for key, value in self.army.items():
-            for regiment in value:
-                if key.value[1] == Team.RED:
-                    regiment.move(-1, 0)
-                else:
-                    regiment.move(1, 0)
+        for red,blue in zip(self.army_red.values(),self.army_blue.values()):
+            for regiment in red:
+                closest = closestRegiment(regiment,self.army_blue)
+                regiment.move(closest[1], closest[0], centroidOfRegiment(regiment))
+            for regiment in blue:
+                closest = closestRegiment(regiment,self.army_red)
+                regiment.move(closest[1], closest[0], centroidOfRegiment(regiment))
 
+        #correction
+        inv_pos = self.__inverse_position()
+        for red,blue in zip(self.army_red.values(),self.army_blue.values()):
+            for regiment in red:
+                regiment.correct_move(inv_pos)
+            for regiment in blue:
+                regiment.correct_move(inv_pos)
+
+        print(all(len(node) == 1 for node in inv_pos.values()))
+
+        print(f'{self.t}/150')
         if self.t == 150:
             self.stop()
 
+    def __inverse_position(self) -> Dict[Tuple[int,int],List[ap.Agent]]:
+        inv_pos = {}
+        for k, v in self.battle_field.positions.items():
+            inv_pos[v] = inv_pos.get(v, []) + [k]
+
+        return inv_pos
     def update(self):
         """ Record a dynamic variable. """
 
@@ -67,14 +96,10 @@ class BattleModel(ap.Model):
         colors = {1:'b', 2:'r'}
         written_colors = []
 
-        for key,value in self.army.items():
-            if key.value[1] == Team.BLUE:
-                for regiment in value:
-                    for agent in regiment:
-                        written_colors.append(colors[1])
+        for key in self.battle_field.positions:
+            if key.team == Team.RED.value:
+                written_colors.append(colors[2])
             else:
-                for regiment in value:
-                    for agent in regiment:
-                        written_colors.append(colors[2])
+                written_colors.append(colors[1])
 
         return written_colors
