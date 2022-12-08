@@ -41,4 +41,10 @@ class Soldier(ap.Agent):
 
     # TODO: One soldiers shouldn't be on top of another
     def move(self, x_axis: int, y_axis: int):
-        self.battle_front.move_by(self, (x_axis, y_axis))
+        pos = self.battle_front.positions[self]
+        destination = (pos[0] + x_axis, pos[1] + y_axis)
+        if destination in self.battle_front.empty:  # check if target position is empty
+            self.battle_front.move_by(self, (x_axis, y_axis))
+        else:
+            pass
+

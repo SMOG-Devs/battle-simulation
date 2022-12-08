@@ -47,8 +47,12 @@ class Regiment:
 
     def move(self):
         def distance_to(regiment) -> float:
-            # TODO: implement
-            return 10
+            first = self.units[0]
+            second = regiment[0]
+            x = self.battlefield.positions[second][0] - self.battlefield.positions[first][0]
+            y = self.battlefield.positions[second][1] - self.battlefield.positions[first][1]
+            dis = np.linalg.norm((x, y))
+            return dis
 
         def direction_to(regiment) -> (float, float):
             # Take first unit of self and regiment and normalize their difference
@@ -78,13 +82,10 @@ class Regiment:
                     target = reg
 
         if target is not None:
-            dir = direction_to(target)
-            self.units.move(dir[0], dir[1])
+            dire = direction_to(target)
+            self.units.move(dire[0], dire[1])
         else:
-            if self.units[0].team == Team.RED:
-                self.units.move(-1, 0)
-            else:
-                self.units.move(1, 0)
+            self.units.move(0, 0)
 
     def attack(self):
         def inside_of_grid(troop):
@@ -108,4 +109,8 @@ class Regiment:
 
     def remove_dead(self):
         # Regiment.battlefield.remove_agents(self.units.select(self.units.health <= 0)) # doesn't work, idk why
+        #Regiment.battlefield.remove_agents(self.units.select(self.units.health <= 0))
         self.units = self.units.select(self.units.health > 0)
+
+    def is_alive(self) -> bool:  # check if any soldier is alive
+        return len(self.units) >= 1

@@ -14,11 +14,22 @@ sample_model = {
 sample_model2 = {
     'army_dist': {
         Agent_type.SOLDIER_BLUE: {
-            'quantity': [10, 10, 20],
-            'position': [(20, 20), (100, 100), (120, 120)]},
+            'quantity': [10, 10],
+            'position': [(20, 20), (20, 100)]},
         Agent_type.SOLDIER_RED: {
-            'quantity': [100, 5],
-            'position': [(40, 20), (20, 100)]}
+            'quantity': [10, 10, 20],
+            'position': [(60, 20), (60, 100), (40, 50)]}
+    },
+    'infantry_speed': 2
+}
+sample_model3 = {
+    'army_dist': {
+        Agent_type.SOLDIER_BLUE: {
+            'quantity': [1],
+            'position': [(20, 20)]},
+        Agent_type.SOLDIER_RED: {
+            'quantity': [1],
+            'position': [(20, 40)]}
     },
     'infantry_speed': 2
 }

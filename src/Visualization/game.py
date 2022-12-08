@@ -118,7 +118,7 @@ while not done:
                               cells_size,
                               cells_size])
 
-    grid_new.step()
+
     # Draw UI
     for button in buttons:
         button.draw()
@@ -135,6 +135,7 @@ while not done:
 
     if frames_counter % update_rate == 0:  # update grid once per UPDATE_RATE frames
         grid_obj.step()
+        grid_new.step()
 
     clock.tick(FPS)
 

@@ -40,9 +40,12 @@ class BattleModel(ap.Model):
     def step(self):
         """ Call a method for every regiment. """
 
-
         for reg in self.regiments:
-            reg.move()
+            if reg.is_alive():  # I can't find out why that 'if' is necessary
+                # all dead units are removed with .remove_dead() functions and empty
+                # regiments are also removed...........
+                # but it doesnt work without this 'if'
+                reg.move()
 
         for reg in self.regiments:
             reg.attack()
@@ -54,6 +57,11 @@ class BattleModel(ap.Model):
             if reg.units_count() <= 0:
                 self.regiments.remove(reg)
         self._save_frame()
+        data = ""
+        data += " " + str(self.t)
+        for reg in self.regiments:
+            data += " " + str(reg.units_count())
+        print(data)
 
         if self.t == self.steps:
             self.stop()
