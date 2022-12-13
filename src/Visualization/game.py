@@ -2,6 +2,11 @@
 # zoom in/out with keys: k l
 
 
+# update grid once per x frames:
+update_rate = 5  # once per 2 seconds
+
+running = True
+
 def run(logs_path: str = 'logs.plk'):
     import math
 
@@ -12,9 +17,6 @@ def run(logs_path: str = 'logs.plk'):
 
     # FPS constants
     FPS = 20
-    # update grid once per x frames:
-    update_rate = 5  # once per 2 seconds
-
 
 
     # Define some colors
@@ -46,14 +48,27 @@ def run(logs_path: str = 'logs.plk'):
 
     def ration_minus():
         global update_rate
-        if update_rate > 2:
+        if update_rate >= 2:
             update_rate -= 1
+
+    def button_start():
+        global running
+        running = True
+
+    def button_stop():
+        global running
+        running = False
 
     buttons = []
     button = Button(325, 730, 70, 70, "+", screen, (100, 100, 100), ration_plus)
     buttons.append(button)
     button2 = Button(325+75, 730, 70, 70, "-", screen, (100, 100, 100), ration_minus)
     buttons.append(button2)
+
+    button_start = Button(325-75, 730, 70, 70, "START", screen, (100, 100, 100), button_start)
+    buttons.append(button_start)
+    button_stop = Button(325+150, 730, 70, 70, "STOP", screen, (100, 100, 100), button_stop)
+    buttons.append(button_stop)
     camera = Camera(0, 0, 200, 50)  # camera size mush be the same as grid size
 
     frames_counter = 0
@@ -127,7 +142,8 @@ def run(logs_path: str = 'logs.plk'):
         text_rect.center = (400, 700)
         screen.blit(text_surf, text_rect)
 
-        if frames_counter % update_rate == 0:  # update grid once per UPDATE_RATE frames
+        global running
+        if running and frames_counter % update_rate == 0:  # update grid once per UPDATE_RATE frames
             grid_new.step()
 
         clock.tick(FPS)

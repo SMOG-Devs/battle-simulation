@@ -101,6 +101,7 @@ class Regiment:
     def is_alive(self) -> bool:  # check if any soldier is alive
         return len(self.units) >= 1
 
+    # TODO: ignore own team
     # Search for closest regiment
     def __closest_regiment(self) -> Tuple[Tuple[int, int], Regiment]:  # object = Regiment
         def distance(a: Regiment, b: Regiment):  # Get distance between two regiments

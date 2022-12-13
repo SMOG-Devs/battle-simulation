@@ -17,7 +17,7 @@ def build_and_run(parameters: dict, steps: int = 100, filename: str = 'logs/b.pl
 
 
 if __name__ == '__main__':
-    build_and_run(sample.sample_model2, 50, 'logs/b.plk')
+    build_and_run(sample.sample_model2, 70, 'logs/b.plk')
 
     # Example for building only:
     # build(sample.sample_model2, 20, 'logs/b.plk')
