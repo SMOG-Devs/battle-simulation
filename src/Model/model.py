@@ -1,20 +1,29 @@
 import agentpy as ap
 from .model_constants import FIELD_WIDTH, FIELD_HEIGHT, Agent_type, Team
-from typing import List, Tuple
+from typing import List, Tuple, Dict
 import numpy as np
+from .regiment import Regiment
+import pickle
+from .MeasureSystem import closestRegiment, centroidOfRegiment
 
 
 class BattleModel(ap.Model):
 
-    def __init__(self, parameters=None, _run_id=None, **kwargs):
+    def __init__(self, parameters=None, _run_id=None, steps=150, logs_filename: str = 'logs.plk', **kwargs):
         super().__init__(parameters, _run_id)
-        self.battle_field = None
-        self.army = dict()
+        self.battle_field: ap.Grid = None
+        self.army = dict()  # required for self.return_soldiers_color but should be removed in the future
+        self.steps = steps
+        self.regiments: [Regiment] = []  # list of all regiments
+        self.logs_filename = logs_filename
+        self.logs: [[(type, Team, int, int, (int, int))]] = []  # list of frames, each frame have list of tuples: type, team, status, health, (positionX, positionY)
+        # model manages regiments, regiments manages units
+
 
     def setup(self):
         """ Initiate a list of new agents. """
-        self.battle_field = ap.Grid(self, (FIELD_WIDTH, FIELD_HEIGHT), track_empty=True, check_border=False)
-
+        self.battle_field = ap.Grid(self, (FIELD_WIDTH, FIELD_HEIGHT), track_empty=True, check_border=True)
+        Regiment.setup(self, self.battle_field)
         for key, values in self.p['army_dist'].items():
             self._setup_army(key, values['quantity'], values['position'])
 
@@ -22,59 +31,96 @@ class BattleModel(ap.Model):
         self.army[agent_type] = []
 
         for quantity, position in zip(quantities, positions):
-            regiment = ap.AgentList(self, quantity, agent_type.value[0])
-            positions_for_soldiers = self._generate_positions(quantity, position)
-            self.battle_field.add_agents(regiment, positions=positions_for_soldiers)
-            self.army[agent_type].append(regiment)
-            regiment.setup_map_binding(self.battle_field)
+            regiment = Regiment(quantity, agent_type.value[0], agent_type.value[1], position)
+            self.regiments.append(regiment)
 
+            # this is necessary for printing
+            self.army[agent_type].append(regiment.units)
             # TODO:
             # Dodać zabezpieczenie przed nakładaniem się wojsk
 
-    @staticmethod
-    def _generate_positions(quantity: int, position: Tuple[int, int]) -> List[Tuple[int, int]]:
-        positions = []
-        x, y = position
-        left = int(np.sqrt(quantity))
-        for i in range(quantity):
-            positions.append((x, y))
-            x += 2
-            if i % left == 0:
-                x = position[0]
-                y += 2
-
-        return positions
-
     def step(self):
-        """ Call a method for every agent. """
-        for key, value in self.army.items():
-            for regiment in value:
-                if key.value[1] == Team.RED:
-                    regiment.move(-1, 0)
-                else:
-                    regiment.move(1, 0)
+        """ Call a method for every regiment. """
 
-        if self.t == 150:
+        for reg in self.regiments:
+            if reg.is_alive():  # I can't find out why that 'if' is necessary
+                # all dead units are removed with .remove_dead() functions and empty
+                # regiments are also removed...........
+                # but it doesnt work without this 'if'
+                reg.move()
+
+        if self.t == 20:
+            print("ds")
+
+        for reg in self.regiments:
+            reg.attack()
+
+        for reg in self.regiments:
+            reg.remove_dead()
+
+        for reg in self.regiments:
+            if reg.units_count() <= 0:
+                self.regiments.remove(reg)
+
+        self._save_frame()
+        data = ""
+        data += " " + str(self.t)
+        for reg in self.regiments:
+            data += " " + str(reg.units_count())
+        print(data)
+
+
+        if self.t == self.steps:
             self.stop()
+
+    def __inverse_position(self) -> Dict[Tuple[int,int],List[ap.Agent]]:
+        inv_pos = {}
+        for k, v in self.battle_field.positions.items():
+            inv_pos[v] = inv_pos.get(v, []) + [k]
+
+        return inv_pos
 
     def update(self):
         """ Record a dynamic variable. """
 
     def end(self):
-        """ Repord an evaluation measure. """
+        """ Report an evaluation measure. """
+        self.save_logs_as_pickle(self.logs_filename)
 
     def return_soldiers_colors(self):
-        colors = {1:'b', 2:'r'}
+        colors = {1: 'b', 2: 'r', 3: 'black'}
         written_colors = []
 
-        for key,value in self.army.items():
+        for key, value in self.army.items():
             if key.value[1] == Team.BLUE:
                 for regiment in value:
                     for agent in regiment:
-                        written_colors.append(colors[1])
+                        # This 'if' doesn t work with dummy classes
+                        if agent.status == 0:
+                            written_colors.append(colors[3])
+                        else:
+                            written_colors.append(colors[1])
+
             else:
                 for regiment in value:
                     for agent in regiment:
-                        written_colors.append(colors[2])
-
+                        # This 'if' doesn't work with dummy classes
+                        if agent.status == 0:
+                            written_colors.append(colors[3])
+                        else:
+                            written_colors.append(colors[2])
         return written_colors
+
+    def _save_frame(self):
+        current_frame = []
+        for unit in self.battle_field.agents:
+            current_frame.append((str(unit.type), str(unit.team), unit.status, unit.health,
+                                  self.battle_field.positions[unit]))
+        self.logs.append(current_frame)
+
+    def save_logs_as_pickle(self, filename):
+        with open(filename, 'wb') as file:
+            pickle.dump(self.logs, file)
+
+
+
