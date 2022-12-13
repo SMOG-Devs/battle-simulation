@@ -27,8 +27,8 @@ class Regiment:
     def _generate_positions(quantity: int, position: Tuple[int, int]) -> List[Tuple[int, int]]:
         positions = []
         x, y = position
-        left = int(np.sqrt(quantity))
-        for i in range(quantity):
+        left = round(np.sqrt(quantity))
+        for i in range(1, quantity + 1):
             positions.append((x, y))
             x += 2
             if i % left == 0:
