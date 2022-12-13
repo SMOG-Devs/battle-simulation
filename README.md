@@ -2,5 +2,6 @@
 
 ## Setup
 Run `main.py` to build, simulate and visualise model.
-### Settings
-`buildModel.py`
+
+## Setting
+Modify src/Modle/Sample_dict_model.py to change model
