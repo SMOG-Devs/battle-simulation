@@ -1,3 +1,6 @@
+from __future__ import annotations
+
+from math import sqrt
 from typing import Tuple, List
 
 import agentpy as ap
@@ -6,7 +9,7 @@ import numpy as np
 
 
 class Regiment:
-    regiments: List = []  # static variable, contains tuples (regiment, team) of all regiments
+    regiments: List = []  # static variable, contains all regiments
     model: ap.Model = None
     battlefield: ap.Grid = None
 
@@ -16,8 +19,8 @@ class Regiment:
         Regiment.battlefield = grid
 
     @staticmethod
-    def _add_regiment(regiment, team):
-        Regiment.regiments.append((regiment, team))
+    def _add_regiment(regiment):
+        Regiment.regiments.append(regiment)
 
     @staticmethod
     def _generate_positions(quantity: int, position: Tuple[int, int]) -> List[Tuple[int, int]]:
@@ -37,7 +40,7 @@ class Regiment:
         self.units = ap.AgentList(Regiment.model, quantity, agent_type)
         positions_for_soldiers = Regiment._generate_positions(quantity, position)
         Regiment.battlefield.add_agents(self.units, positions=positions_for_soldiers)
-        Regiment._add_regiment(self.units, team)
+        Regiment._add_regiment(self)
         self.units.setup_map_binding(self.battlefield)
         self.units.team = team
         self.team = team
@@ -46,21 +49,12 @@ class Regiment:
         return len(self.units)
 
     def move(self):
-        def distance_to(regiment) -> float:
-            first = self.units[0]
-            second = regiment[0]
-            x = self.battlefield.positions[second][0] - self.battlefield.positions[first][0]
-            y = self.battlefield.positions[second][1] - self.battlefield.positions[first][1]
-            dis = np.linalg.norm((x, y))
-            return dis
 
-        def direction_to(regiment) -> (float, float):
-            # Take first unit of self and regiment and normalize their difference
-            # TODO: make if smarter
-            first = self.units[0]
-            second = regiment[0]
-            x = self.battlefield.positions[second][0] - self.battlefield.positions[first][0]
-            y = self.battlefield.positions[second][1] - self.battlefield.positions[first][1]
+        def direction_to(regiment: Regiment) -> (float, float):
+            # TODO: make if faster
+
+            x = regiment.__centroid_of_regiment()[0] - self.__centroid_of_regiment()[0]
+            y = regiment.__centroid_of_regiment()[1] - self.__centroid_of_regiment()[1]
             dis = np.linalg.norm((x, y))
             # if regiments are on top of each other, return default
             if dis < 1:
@@ -71,21 +65,13 @@ class Regiment:
             y = round(y)
             return x, y
 
-        smallest_distance = 10000.0
-        target = None
-        for reg, team in Regiment.regiments:  # check every regiment for possible enemy
-            if reg == self:  # ignore self
-                continue
-            if team != self.team:
-                if smallest_distance > distance_to(reg):
-                    smallest_distance = distance_to(reg)
-                    target = reg
+        target: ((int, int), Regiment) = self.__closest_regiment()  # Remember: it contains ((int, int), Regiment)
+        if target is None:
+            return  # This shouldn't happen, where there is no enemy, battle is won
 
-        if target is not None:
-            dire = direction_to(target)
-            self.units.move(dire[0], dire[1])
-        else:
-            self.units.move(0, 0)
+
+        # direction = direction_to(target[1]) we don't pass direction, we pass enemy and self centroid tuples instead
+        self.units.move(target[1].__centroid_of_regiment(), self.__centroid_of_regiment())
 
     def attack(self):
         def inside_of_grid(troop):
@@ -114,3 +100,36 @@ class Regiment:
 
     def is_alive(self) -> bool:  # check if any soldier is alive
         return len(self.units) >= 1
+
+    # Search for closest regiment
+    def __closest_regiment(self) -> Tuple[Tuple[int, int], Regiment]:  # object = Regiment
+        def distance(a: Regiment, b: Regiment):  # Get distance between two regiments
+            c_a = a.__centroid_of_regiment()
+            c_b = b.__centroid_of_regiment()
+            return sqrt((c_a[0] - c_b[0]) ** 2 + (c_a[1] - c_b[1]) ** 2)
+
+        closest_regiment: Regiment = None
+        closest_dist = float('inf')
+        closest: ((int, int), Regiment)
+
+        for reg in Regiment.regiments:
+            if reg == self:
+                continue
+            if len(reg.units) <= 0:  # TODO: this if shouldn't be necessary, empty regiments should be removed
+                continue
+            if distance(self, reg) < closest_dist:
+                closest_dist = distance(self, reg)
+                closest_regiment = reg
+
+        return closest_regiment.__centroid_of_regiment(), closest_regiment
+
+    def __centroid_of_regiment(self) -> Tuple[int, int]:
+        if len(self.units) == 0:
+            return None
+        x_sum, y_sum = (0, 0)
+        for agent in self.units:
+            pos = self.battlefield.positions[agent]
+            x_sum += pos[0]
+            y_sum += pos[1]
+
+        return x_sum // len(self.units), y_sum // len(self.units)

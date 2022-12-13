@@ -1,30 +1,26 @@
-import numpy as np
-import matplotlib.pyplot as plt
-import agentpy as ap
-import src.Model.model as battle_model
+import buildModel
+import pygameSim
 import src.Model.Sample_dict_model as sample
 
 
-def animation_plot_single(m: battle_model.BattleModel, ax):
-    ax.set_title(f"Boids Flocking Model t={m.t}")
-    pos = m.battle_field.positions.values()
-    colors = m.return_soldiers_colors()
-    pos = np.array(list(pos)).T  # Transform
-    # if pos.shape[0] == 0:  # if there is no agents, plotting will fail and throw some errors
-    #     pos = np.ndarray(shape=(2,2), dtype=int)
-
-    ax.scatter(*pos, s=1, c=colors)
-    ax.set_xlim(0, 300)
-    ax.set_ylim(0, 300)
-    ax.set_axis_off()
+def build(parameters: dict, steps: int = 100, filename: str = 'logs/b.plk'):
+    buildModel.build(steps, sample.sample_model2, filename)
 
 
-def animation_plot(m, p, steps):
-    fig = plt.figure(figsize=(7, 7))
-    ax = fig.add_subplot(111)
-    animation = ap.animate(m(p, steps=steps), fig, ax, animation_plot_single)
-    animation.save('battle.gif', dpi=150, fps=3, writer='Pillow')
+def run(filename: str = 'logs/b.plk'):
+    pygameSim.run(filename)
+
+
+def build_and_run(parameters: dict, steps: int = 100, filename: str = 'logs/b.plk'):
+    buildModel.build(steps, sample.sample_model2, filename)
+    pygameSim.run(filename)
 
 
 if __name__ == '__main__':
-    animation_plot(battle_model.BattleModel, sample.sample_model2, 100)
+    build_and_run(sample.sample_model2, 50, 'logs/b.plk')
+
+    # Example for building only:
+    # build(sample.sample_model2, 20, 'logs/b.plk')
+
+    # Example for displaying only:
+    #run('logs/b.plk')

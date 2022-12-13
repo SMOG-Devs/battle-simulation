@@ -1,25 +1,28 @@
 import agentpy as ap
 from .model_constants import FIELD_WIDTH, FIELD_HEIGHT, Agent_type, Team
-from typing import List, Tuple
+from typing import List, Tuple, Dict
 import numpy as np
 from .regiment import Regiment
 import pickle
+from .MeasureSystem import closestRegiment, centroidOfRegiment
 
 
 class BattleModel(ap.Model):
 
-    def __init__(self, parameters=None, _run_id=None, steps=150, **kwargs):
+    def __init__(self, parameters=None, _run_id=None, steps=150, logs_filename: str = 'logs.plk', **kwargs):
         super().__init__(parameters, _run_id)
         self.battle_field: ap.Grid = None
         self.army = dict()  # required for self.return_soldiers_color but should be removed in the future
         self.steps = steps
         self.regiments: [Regiment] = []  # list of all regiments
+        self.logs_filename = logs_filename
         self.logs: [[(type, Team, int, int, (int, int))]] = []  # list of frames, each frame have list of tuples: type, team, status, health, (positionX, positionY)
         # model manages regiments, regiments manages units
 
+
     def setup(self):
         """ Initiate a list of new agents. """
-        self.battle_field = ap.Grid(self, (FIELD_WIDTH, FIELD_HEIGHT), track_empty=True, check_border=False)
+        self.battle_field = ap.Grid(self, (FIELD_WIDTH, FIELD_HEIGHT), track_empty=True, check_border=True)
         Regiment.setup(self, self.battle_field)
         for key, values in self.p['army_dist'].items():
             self._setup_army(key, values['quantity'], values['position'])
@@ -35,7 +38,6 @@ class BattleModel(ap.Model):
             self.army[agent_type].append(regiment.units)
             # TODO:
             # Dodać zabezpieczenie przed nakładaniem się wojsk
-
 
     def step(self):
         """ Call a method for every regiment. """
@@ -56,6 +58,7 @@ class BattleModel(ap.Model):
         for reg in self.regiments:
             if reg.units_count() <= 0:
                 self.regiments.remove(reg)
+
         self._save_frame()
         data = ""
         data += " " + str(self.t)
@@ -63,21 +66,26 @@ class BattleModel(ap.Model):
             data += " " + str(reg.units_count())
         print(data)
 
+
         if self.t == self.steps:
             self.stop()
-            self.end()
 
+    def __inverse_position(self) -> Dict[Tuple[int,int],List[ap.Agent]]:
+        inv_pos = {}
+        for k, v in self.battle_field.positions.items():
+            inv_pos[v] = inv_pos.get(v, []) + [k]
+
+        return inv_pos
 
     def update(self):
         """ Record a dynamic variable. """
 
     def end(self):
         """ Report an evaluation measure. """
-        self.save_logs_as_pickle("src\\Visualization\\logs.plk")
-        print("END")
+        self.save_logs_as_pickle(self.logs_filename)
 
     def return_soldiers_colors(self):
-        colors = {1:'b', 2:'r', 3:'black'}
+        colors = {1: 'b', 2: 'r', 3: 'black'}
         written_colors = []
 
         for key, value in self.army.items():
@@ -93,7 +101,7 @@ class BattleModel(ap.Model):
             else:
                 for regiment in value:
                     for agent in regiment:
-                        # This 'if' doesn t work with dummy classes
+                        # This 'if' doesn't work with dummy classes
                         if agent.status == 0:
                             written_colors.append(colors[3])
                         else:
