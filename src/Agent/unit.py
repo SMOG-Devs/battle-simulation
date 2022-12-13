@@ -6,44 +6,69 @@ from typing import Tuple, Dict, List
 import agentpy as ap
 import random
 
+class Team(Enum):
+    RED = 0
+    BLUE = 1
 
-# TODO: finish unit abstract class
-class Unit(ABC):
+class Orders(Enum):
+    MoveAndAttack = 1
+    Wait = 2
+
+
+class Status(Enum):
+    Fighting = 1
+    Dead = 0
+    Surrender = 2
+
+
+class Unit(ap.Agent):
     """
     Grid abstract class for pygame visualization
     :argument cell_count: size of grid (horizontal and vertical)
     """
-    def __init__(self):
-        self.battle_front = None
-        self.speed = None
+
+    def __init__(self, model, *args, **kwargs):
+        """
+        Initialize variables
+        """
+        super().__init__(model, *args, **kwargs)
         self.battle_front: ap.Grid
         self.speed: float
         self.pos: int
         self.regiment_order: Orders
-        self.regiment_order = Orders.MoveEnemyLongRange
         self.overflow_y = 0
         self.overflow_x = 0
-        self.vector = (0, 0)
-        self.team = 0
+        self.team: Team
+        self.health = 100
+        self.damage = 20
+        self.status = 2
+        self.range = 1
 
-    def step(self):
+    def setup(self, **kwargs):
         """
-        Loads next frame
-        :return: nothing
+        Loads parameters from self.p e.x:  self.speed = self.p['infantry_speed']
         """
-        pass
+        print("setup have no override")
 
-    def get_grid(self):
+    def setup_map_binding(self, battle_front: ap.Grid):
         """
-        Get current grid as list of lists of ints
-        :return: list of lists of ints
+        Setup self positions and ap.Grid
+        :argument battle_front: ap.Grid
         """
-        pass
+        self.battle_front = battle_front
+        self.pos = self.battle_front.positions[self]
 
-    def get_colors(self):
+    def move(self, enemy_position: Tuple[int, int], regiment_position: Tuple[int, int]):
         """
-        Get colors coded as ints
-        :return: dict(int, Color)
+        Move regiment towards enemy regiment
+        :argument enemy_position: (int, int) target regiment
+        :argument regiment_position: (int, int) own regiment
         """
-        pass
+        print("move have no override")
 
+    def attack(self, enemy_regiment):
+        """
+        Attack selected regiment :argument enemy_regiment: Regiment - it is optional, e.x: melee units don't need a
+        target, they will just attack nearby enemy
+        """
+        print("attack have no override")

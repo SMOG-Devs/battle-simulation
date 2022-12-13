@@ -9,6 +9,7 @@ class Grid(ABC):
     Grid abstract class for pygame visualization
     :argument cell_count: size of grid (horizontal and vertical)
     """
+
     def __init__(self, cell_count):
         self.cell_count = cell_count
         self.grid = []
@@ -16,6 +17,13 @@ class Grid(ABC):
     def step(self):
         """
         Loads next frame
+        :return: nothing
+        """
+        pass
+
+    def to_start(self):
+        """
+        Loads first frame
         :return: nothing
         """
         pass
@@ -56,6 +64,17 @@ class GridPickle(Grid):
             self.t = 0
         self._load_grid()
 
+    def prev_step(self):
+        if self.t >= 1:
+            self.t -= 1
+        else:
+            self.t = len(self.logs) - 1
+        self._load_grid()
+
+    def to_start(self):
+        self.t = 0
+        self._load_grid()
+
     def get_grid(self):
         return self.grid
 
@@ -91,4 +110,4 @@ class GridPickle(Grid):
 # new_path = cur_path.replace('src\\Visualization', 'logs.plk')
 # print(new_path)
 
-#g = GridPickle(300, 'logs.plk')
+# g = GridPickle(300, 'logs.plk')

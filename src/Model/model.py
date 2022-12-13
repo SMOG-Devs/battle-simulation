@@ -49,6 +49,9 @@ class BattleModel(ap.Model):
                 # but it doesnt work without this 'if'
                 reg.move()
 
+        if self.t == 20:
+            print("ds")
+
         for reg in self.regiments:
             reg.attack()
 

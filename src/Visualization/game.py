@@ -7,6 +7,7 @@ update_rate = 5  # once per 2 seconds
 
 running = True
 
+
 def run(logs_path: str = 'logs.plk'):
     import math
 
@@ -17,7 +18,6 @@ def run(logs_path: str = 'logs.plk'):
 
     # FPS constants
     FPS = 20
-
 
     # Define some colors
     BLACK = (0, 0, 0)
@@ -53,27 +53,45 @@ def run(logs_path: str = 'logs.plk'):
 
     def button_start():
         global running
-        running = True
+        if running:
+            running = False
+        else:
+            running = True
 
-    def button_stop():
-        global running
-        running = False
+    def button_prev_step():
+        grid_new.prev_step()
+
+    def button_next_step():
+        grid_new.step()
+
+    grid_new = GridPickle(300, logs_path)
+
+    def button_beginning():
+        grid_new.to_start()
 
     buttons = []
+
+    button_start = Button(325 - 75, 730, 70, 70, "STOP", screen, (100, 100, 100), button_start)
+    buttons.append(button_start)
+
+    button_beginning = Button(325 - 150, 730, 70, 70, "|<=", screen, (100, 100, 100), button_beginning)
+    buttons.append(button_beginning)
+
     button = Button(325, 730, 70, 70, "+", screen, (100, 100, 100), ration_plus)
     buttons.append(button)
-    button2 = Button(325+75, 730, 70, 70, "-", screen, (100, 100, 100), ration_minus)
+
+    button2 = Button(325 + 75, 730, 70, 70, "-", screen, (100, 100, 100), ration_minus)
     buttons.append(button2)
 
-    button_start = Button(325-75, 730, 70, 70, "START", screen, (100, 100, 100), button_start)
-    buttons.append(button_start)
-    button_stop = Button(325+150, 730, 70, 70, "STOP", screen, (100, 100, 100), button_stop)
-    buttons.append(button_stop)
+    button_next = Button(325 + 150, 730, 70, 70, "Next", screen, (100, 100, 100), button_next_step)
+    buttons.append(button_next)
+    button_prev = Button(325 + 225, 730, 70, 70, "Prev", screen, (100, 100, 100), button_prev_step)
+    buttons.append(button_prev)
+
+
     camera = Camera(0, 0, 200, 50)  # camera size mush be the same as grid size
 
     frames_counter = 0
-
-    grid_new = GridPickle(300, logs_path)
 
     # -------- Main Program Loop -----------
     while not done:
@@ -127,22 +145,25 @@ def run(logs_path: str = 'logs.plk'):
                                   cells_size,
                                   cells_size])
 
-
         # Draw UI
         for button in buttons:
             button.draw()
-
+        global running
+        if running:
+            buttons[0].set_text("STOP")
+        else:
+            buttons[0].set_text("START")
 
         # TODO: refactor this part
         def text_objects(text):
             font = pygame.font.SysFont("comicsansms", 20)
             text_surface = font.render(text, True, (0, 0, 0))
             return text_surface, text_surface.get_rect()
+
         text_surf, text_rect = text_objects("Update once per " + str(update_rate / FPS) + " seconds")
         text_rect.center = (400, 700)
         screen.blit(text_surf, text_rect)
 
-        global running
         if running and frames_counter % update_rate == 0:  # update grid once per UPDATE_RATE frames
             grid_new.step()
 

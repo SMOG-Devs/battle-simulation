@@ -1,16 +1,16 @@
 from enum import Enum
 from . import Dummy_Classes
+from src.Agent.units import Soldier, Infantry
 
 from ..Agent.units import Soldier
+from src.Agent.unit import Team
 
 FIELD_WIDTH = 300
 FIELD_HEIGHT = 300
 
-
-class Team(Enum):
-    RED = 0
-    BLUE = 1
-
+#
+# TEAM enum moved to src/Agent/unit.py
+#
 
 class Agent_type(Enum):
     HUSSARS_RED = (Dummy_Classes.dummy_hussar, Team.RED)
@@ -24,9 +24,9 @@ class Agent_type(Enum):
     SOLDIER_BLUE = (Soldier, Team.BLUE)
     SOLDIER_RED = (Soldier, Team.RED)
 
-    # dummies
-    SOLDIER_DUMMY3 = (Soldier, 3)
-    SOLDIER_DUMMY4 = (Soldier, 4)
+    INFANTRY2_BLUE = (Infantry, Team.BLUE)
+    INFANTRY2_RED = (Infantry, Team.RED)
+
 
 
 

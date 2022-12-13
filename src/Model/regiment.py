@@ -4,8 +4,9 @@ from math import sqrt
 from typing import Tuple, List
 
 import agentpy as ap
-from .model_constants import Agent_type, Team
+from .model_constants import Agent_type
 import numpy as np
+from src.Agent.unit import Team, Orders
 
 
 class Regiment:
@@ -67,41 +68,26 @@ class Regiment:
 
         target: ((int, int), Regiment) = self.__closest_regiment()  # Remember: it contains ((int, int), Regiment)
         if target is None:
+            return
+        if len(target[1].units) <= 0:
             return  # This shouldn't happen, where there is no enemy, battle is won
-
 
         # direction = direction_to(target[1]) we don't pass direction, we pass enemy and self centroid tuples instead
         self.units.move(target[1].__centroid_of_regiment(), self.__centroid_of_regiment())
 
     def attack(self):
-        def inside_of_grid(troop):
-            return 0 < self.battlefield.positions[troop][0] < self.battlefield.shape[0] and \
-                   0 < self.battlefield.positions[troop][1] < self.battlefield.shape[0]
-
-        def attack(troop, attack_range=1):
-            if not inside_of_grid(troop):
-                return
-            for neighbor in self.battlefield.neighbors(troop, distance=attack_range).to_list():
-                if neighbor.team != troop.team:
-                    # attack the first found neighbour from opposite team
-                    # break to not attack all neighbours but only the first one
-                    troop.attack(neighbor)
-                    break
-
+        #  in future it may require target Regiment
         for unit in self.units:
-            if not inside_of_grid(unit):
-                continue
-            attack(unit)
+            unit.attack(None)
 
     def remove_dead(self):
         # Regiment.battlefield.remove_agents(self.units.select(self.units.health <= 0)) # doesn't work, idk why
-        #Regiment.battlefield.remove_agents(self.units.select(self.units.health <= 0))
+        Regiment.battlefield.remove_agents(self.units.select(self.units.health <= 0))
         self.units = self.units.select(self.units.health > 0)
 
     def is_alive(self) -> bool:  # check if any soldier is alive
         return len(self.units) >= 1
 
-    # TODO: ignore own team
     # Search for closest regiment
     def __closest_regiment(self) -> Tuple[Tuple[int, int], Regiment]:  # object = Regiment
         def distance(a: Regiment, b: Regiment):  # Get distance between two regiments
@@ -116,12 +102,16 @@ class Regiment:
         for reg in Regiment.regiments:
             if reg == self:
                 continue
+            if reg.team == self.team:
+                continue
             if len(reg.units) <= 0:  # TODO: this if shouldn't be necessary, empty regiments should be removed
                 continue
             if distance(self, reg) < closest_dist:
                 closest_dist = distance(self, reg)
                 closest_regiment = reg
 
+        if closest_regiment is None:
+            return None
         return closest_regiment.__centroid_of_regiment(), closest_regiment
 
     def __centroid_of_regiment(self) -> Tuple[int, int]:

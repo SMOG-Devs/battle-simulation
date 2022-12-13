@@ -27,6 +27,9 @@ class Button:
         text_rect.center = (self.x + self.width / 2, self.y + self.height / 2)
         self.screen.blit(text_surf, text_rect)
 
+    def set_text(self, text: str):
+        self.text = text
+
     def rect(self) -> pygame.Rect:
         return pygame.Rect(self.x, self.y, self.width, self.height)
 
