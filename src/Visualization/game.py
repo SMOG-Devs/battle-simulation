@@ -16,10 +16,11 @@ class Game:
         pygame.display.set_caption("Battle")
         self.done = False
         self.clock = pygame.time.Clock()
-        self.grid = GridPickle(300, logs_path)
+        self.grid = GridPickle(400, logs_path)  # TODO: automatic size of camera and grid from model.constrains
+        self.camera = Camera(0, 0, 400, 50)
         self.buttons: [Button] = []
-        self.camera = Camera(0, 0, 200, 50)
         self.frame = 0  # frames counter (pygame frames, not related to simulation steps)
+        self.step = 0  # step in simulation
         self.running = True  # state of simulation (running / stopped)
         self.FONT_SIZE = 15
         self.FONT = pygame.font.Font("Lato-Regular.ttf", self.FONT_SIZE)
@@ -48,6 +49,14 @@ class Game:
             self.running = True
             self.__button_start_stop.set_text("STOP")
 
+    def __next_step(self):
+        self.step += 1
+        self.grid.step()
+
+    def __prev_step(self):
+        self.step -= 1
+        self.grid.prev_step()
+
     def __init_ui(self):
         color = pygame.Color(100, 100, 100)
         self.buttons = [
@@ -55,8 +64,8 @@ class Game:
             Button(325 - 150, 730, 70, 70, "|<=", self.screen, color, self.grid.to_start),
             Button(325, 730, 70, 70, "+", self.screen, color, self.__update_rate_plus),
             Button(325 + 75, 730, 70, 70, "-", self.screen, color, self.__update_rate_minus),
-            Button(325 + 150, 730, 70, 70, "Next", self.screen, color, self.grid.step),
-            Button(325 + 225, 730, 70, 70, "Prev", self.screen, color, self.grid.prev_step)
+            Button(325 + 150, 730, 70, 70, "Next", self.screen, color, self.__next_step),
+            Button(325 + 225, 730, 70, 70, "Prev", self.screen, color, self.__prev_step)
         ]
 
         self.__button_start_stop = self.buttons[0]
@@ -83,6 +92,7 @@ class Game:
             width = max(width, self.FONT.size(t)[0])
             height += self.FONT_SIZE + line_spacing
         return width, height
+    # popup menu displaying info about units
 
     def __draw_unit_info(self, text: str):
         rect = pygame.Rect(pygame.mouse.get_pos(), self.__text_size(text))
@@ -165,7 +175,7 @@ class Game:
                 if not mouse_over_ui:
                     click_x, click_y = self.camera.screen_to_grid_point(*pygame.mouse.get_pos(), cells_size)
                     if grid[click_x][click_y] != 0:
-                        self.__draw_unit_info("Value:\n" + str(grid[click_x][click_y]))
+                        self.__draw_unit_info(self.grid.get_description(click_x, click_y))
 
     def __render_ui(self):
         for button in self.buttons:
@@ -191,6 +201,7 @@ class Game:
                 break
             # update simulation step once per STEP_TIME seconds
             if self.running and self.frame % (round(self.FPS * self.STEP_TIME)) == 0:
+                self.step += 1
                 self.grid.step()
 
             self.clock.tick(self.FPS)

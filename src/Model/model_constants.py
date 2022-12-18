@@ -5,8 +5,8 @@ from src.Agent.units import Soldier, Infantry
 from ..Agent.units import Soldier
 from src.Agent.unit import Team
 
-FIELD_WIDTH = 300
-FIELD_HEIGHT = 300
+FIELD_WIDTH = 400
+FIELD_HEIGHT = 400
 
 #
 # TEAM enum moved to src/Agent/unit.py

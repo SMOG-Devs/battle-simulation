@@ -104,6 +104,15 @@ class GridPickle(Grid):
                     color = 3
             self.grid[x][y] = color
 
+    def get_description(self, x: int, y: int):
+        descr = ""
+        for unit in self.logs[self.t]:
+            if unit[4] == (x, y):
+                descr += str(unit[0]) + '\n' + str(unit[1]) + '\nStatus: ' + str(unit[2]) + '\nHP: ' + str(unit[3]) + '\nPosition: ' + str(unit[4])
+        return descr
+
+
+
 # tests
 # cur_path = os.path.dirname(__file__)
 # print(cur_path)

@@ -9,7 +9,7 @@ from .MeasureSystem import closestRegiment, centroidOfRegiment
 
 class BattleModel(ap.Model):
 
-    def __init__(self, parameters=None, _run_id=None, steps=150, logs_filename: str = 'logs.plk', **kwargs):
+    def __init__(self, parameters=None, _run_id=None, steps=150, logs_filename: str = 'logs.plk'):
         super().__init__(parameters, _run_id)
         self.battle_field: ap.Grid = None
         self.army = dict()  # required for self.return_soldiers_color but should be removed in the future
@@ -49,8 +49,6 @@ class BattleModel(ap.Model):
                 # but it doesnt work without this 'if'
                 reg.move()
 
-        if self.t == 20:
-            print("ds")
 
         for reg in self.regiments:
             reg.attack()
@@ -72,6 +70,9 @@ class BattleModel(ap.Model):
 
         if self.t == self.steps:
             self.stop()
+
+
+
 
     def __inverse_position(self) -> Dict[Tuple[int,int],List[ap.Agent]]:
         inv_pos = {}
@@ -95,7 +96,7 @@ class BattleModel(ap.Model):
             if key.value[1] == Team.BLUE:
                 for regiment in value:
                     for agent in regiment:
-                        # This 'if' doesn t work with dummy classes
+                        # This 'if' doesn't work with dummy classes
                         if agent.status == 0:
                             written_colors.append(colors[3])
                         else:
