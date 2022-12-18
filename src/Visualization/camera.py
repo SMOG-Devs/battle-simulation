@@ -38,5 +38,11 @@ class Camera:
         if self.y + self.width > self.max_width:
             self.y = self.max_width - self.width
 
+    # translate coordinates on screen to grid coordinates (for mouse input)
+    def screen_to_grid_point(self, x: int, y: int, cell_size: int):
+        return self.x + x // cell_size,  self.y + y // cell_size
 
+    # can return value outside of screen if argument is invisible
+    def grid_to_screen_point(self, x: int, y: int, cell_size: int):
+        return (x - self.x) * cell_size, (y - self.y) * cell_size
 

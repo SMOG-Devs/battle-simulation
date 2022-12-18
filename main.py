@@ -17,10 +17,10 @@ def build_and_run(parameters: dict, steps: int = 100, filename: str = 'logs/b.pl
 
 
 if __name__ == '__main__':
-    build_and_run(sample.sample_model4, 30, 'logs/b.plk')
+    build_and_run(sample.sample_model5, 30, 'logs/b.plk')
 
     # Example for building only:
     # build(sample.sample_model2, 20, 'logs/b.plk')
 
     # Example for displaying only:
-    #run('logs/b.plk')
+    # run('logs/b.plk')
