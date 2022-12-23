@@ -3,7 +3,7 @@ import math
 import pygame
 from .camera import Camera
 from .UI import Button
-from .grid import GridPickle
+from .grid import GridPickle, Terrain
 
 
 class Game:
@@ -17,6 +17,7 @@ class Game:
         self.done = False
         self.clock = pygame.time.Clock()
         self.grid = GridPickle(400, logs_path)  # TODO: automatic size of camera and grid from model.constrains
+        self.terrain = Terrain(400, 400)  # TODO: automatic size of terrain from model.constrains
         self.camera = Camera(0, 0, 400, 50)
         self.buttons: [Button] = []
         self.frame = 0  # frames counter (pygame frames, not related to simulation steps)
@@ -131,7 +132,6 @@ class Game:
                     self.camera.move(0, 5)
 
     def __render_grid(self, grid: [[int]]):
-        self.screen.fill(pygame.Color(200, 200, 200))
         screen_size = self.WINDOW_SIZE
         cells_x = self.camera.width
         cells_y = math.ceil(cells_x / screen_size[0] * screen_size[1])
@@ -177,6 +177,26 @@ class Game:
                     if grid[click_x][click_y] != 0:
                         self.__draw_unit_info(self.grid.get_description(click_x, click_y))
 
+    def __render_terrain(self):
+        screen_size = self.WINDOW_SIZE
+        cells_x = self.camera.width
+        cells_y = math.ceil(cells_x / screen_size[0] * screen_size[1])
+
+        cells_size = math.ceil(screen_size[0] / cells_y)
+
+        grid = self.terrain.get_grid()
+        colors_dict = self.terrain.get_colors()
+        for row in range(cells_x):
+            for column in range(cells_y):
+                color = colors_dict.get(grid[row + self.camera.x][column + self.camera.y], (0, 0, 0))  # default color is black
+                pygame.draw.rect(self.screen,
+                                 color,
+                                 [cells_size * row,
+                                  cells_size * column,
+                                  cells_size,
+                                  cells_size])
+
+
     def __render_ui(self):
         for button in self.buttons:
             button.draw()
@@ -189,6 +209,8 @@ class Game:
             self.__input_handler()
 
             # render grid
+            self.screen.fill(pygame.Color(200, 200, 200))
+            self.__render_terrain()  # TODO: optimize, rendering the same terrain every time is a waste
             self.__render_grid(grid)
 
             # render UI

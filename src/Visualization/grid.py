@@ -1,6 +1,9 @@
+import collections
 import pickle
 from abc import ABC
 import os
+from itertools import product
+
 from pygame import Color
 
 
@@ -108,9 +111,65 @@ class GridPickle(Grid):
         descr = ""
         for unit in self.logs[self.t]:
             if unit[4] == (x, y):
-                descr += str(unit[0]) + '\n' + str(unit[1]) + '\nStatus: ' + str(unit[2]) + '\nHP: ' + str(unit[3]) + '\nPosition: ' + str(unit[4])
+                descr += str(unit[0]) + '\n' + str(unit[1]) + '\nStatus: ' + str(unit[2]) + '\nHP: ' + str(
+                    unit[3]) + '\nPosition: ' + str(unit[4])
         return descr
 
+
+class Terrain:
+    def __init__(self, x: int, y: int):  # x y: size of the grid
+        self.x = x
+        self.y = y
+        self.grid = []
+        for i in range(self.x):
+            self.grid.append([])
+            for j in range(self.y):
+                self.grid[i].append(0)
+        for i in range(self.x):
+            for j in range(self.y):
+                if abs(i - j) < 3:  # river in the middle: weight 10
+                    self.grid[i][j] = 10
+                elif i > j + 10:  # mountains at the top/right: weight 3
+                    self.grid[i][j] = 3
+                else:  # grass in bot/left: weight 1
+                    self.grid[i][j] = 1
+
+                    # three obstacles in the middle of the grass
+                    if (i - 10) ** 2 + (j - 20) ** 2 < 10 ** 2:
+                        self.grid[i][j] = 3
+                    if (i - 40) ** 2 + (j - 30) ** 2 < 10 ** 2:
+                        self.grid[i][j] = 3
+                    if (i - 30) ** 2 + (j - 100) ** 2 < 10 ** 2:
+                        self.grid[i][j] = 3
+
+    def get_colors(self) -> {}:  # dict with colors for each weight
+        return {1: Color(0, 200, 0), 3: Color(100, 100, 100), 10: Color(0, 0, 255)}
+
+    def get_grid(self) -> [[]]:  # grid with weights
+        return self.grid
+
+    def __get_nodes(self):
+        return [(i, j) for i, j in product(range(self.x), range(self.y))]
+
+    def __get_neighbors(self, node):
+        neighbours = []
+        for i in range(-1, 2):
+            for j in range(-1, 2):
+                if i == 0 and j == 0:
+                    continue
+                if 0 <= node[0] + i < self.x and 0 <= node[1] + j < self.y:
+                    neighbours.append((node[0] + i, node[1] + j))
+        return neighbours
+
+
+    def shortest_path(self, start: (int, int), end: (int, int)) -> []:
+        """
+        Calculates the shortest path from start to end
+        :param start: start position
+        :param end: end position
+        :return: list of positions
+        """
+        pass
 
 
 # tests
