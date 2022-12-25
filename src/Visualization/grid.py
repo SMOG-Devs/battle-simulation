@@ -1,11 +1,13 @@
 import pickle
 from abc import ABC
+from dataclasses import dataclass, field
 from itertools import product
 from queue import PriorityQueue
-from dataclasses import dataclass, field
 from typing import Tuple
-
+import heapq
+import numpy as np
 from pygame import Color
+import time
 
 
 class Grid(ABC):
@@ -162,45 +164,21 @@ class Terrain:
                     neighbours.append((node[0] + i, node[1] + j))
         return neighbours
 
-    def shortest_path(self, start: (int, int), end: (int, int)) -> [(int, int)]:
+    def _shortest_path_old(self, start: (int, int), end: (int, int)) -> [(int, int)]:
         """
         Calculates the shortest path from start to end
         :param start: start position
         :param end: end position
         :return: list of positions
         """
-        # nodes = self.__get_nodes()
-        # neighbors = self.__get_neighbors
-        # dist = {node: float('inf') for node in nodes}
-        # dist[start] = 0
-        # prev = {node: None for node in nodes}
-        # while nodes:
-        #     u = min(nodes, key=lambda node: dist[node])
-        #     nodes.remove(u)
-        #     if dist[u] == float('inf'):
-        #         break
-        #     for v in neighbors(u):
-        #         alt = dist[u] + self.grid[v[0]][v[1]]
-        #         if alt < dist[v]:
-        #             dist[v] = alt
-        #             prev[v] = u
-        #     if u == end:
-        #         break
-        # path, u = [], end
-        # while prev[u]:
-        #     path.append(u)
-        #     u = prev[u]
-        # path.append(start)
-        # path.reverse()
-        # return path
 
         @dataclass(order=True)
         class PrioritizedItem:
             priority: int
-            item: Tuple[int,int] = field(compare=False)
+            item: Tuple[int, int] = field(compare=False)
 
         open = PriorityQueue()
-        open.put(PrioritizedItem(0,start))
+        open.put(PrioritizedItem(0, start))
         dist = dict()
         dist[start] = 0
         prev = dict()
@@ -225,16 +203,93 @@ class Terrain:
 
         raise Exception("No path found")  # shouldn't happen
 
+    def shortest_path(self, start: (int, int), end: (int, int)) -> [(int, int)]:
+        """
+        Calculates the shortest path from start to end
+        :param start: start position
+        :param end: end position
+        :return: list of positions
+        """
+
+        @dataclass(order=True)
+        class PrioritizedItem:
+            priority: int
+            item: Tuple[int, int] = field(compare=False)
+
+        def heuristic(a, b):
+            return abs(a[0] - b[0]) + abs(a[1] - b[1])
+
+        open = PriorityQueue()
+        open.put(PrioritizedItem(0, start))
+        dist = dict()
+        dist[start] = 0  # f cost
+        g = dict()  # g cost
+        g[start] = abs(start[0] - end[0]) + abs(start[1] - end[1])  # heuristic
+        prev = dict()
+        prev[start] = None
+        while not open.empty():
+            current = open.get().item
+            if current == end:
+                path, u = [], end
+                while prev[u]:
+                    path.append(u)
+                    u = prev[u]
+                path.append(start)
+                path.reverse()
+                return path
+            for node in self.__get_neighbors(current):
+                node = tuple(node)
+                new_g = g[current] + self.grid[node[0]][node[1]]
+                new_dist = new_g + heuristic(node, end)  # f cost
+                if node not in dist or dist[node] > new_dist:
+                    dist[node] = new_dist  # self.grid[x][y] have weight of the move
+                    g[node] = new_g
+                    prev[node] = current
+                    open.put(PrioritizedItem(new_dist, node))
+
+        raise Exception("No path found")  # shouldn't happen
+
+
+def pathfinding_benchmark(func_name):  # function name as string lmao
+    def get_random_pos(min_limit, max_limit):
+        return np.random.randint(min_limit, max_limit), np.random.randint(min_limit, max_limit)
+
+    def test_pathfinding(size, num_tests):
+        terrain = Terrain(size, size)
+        shortest_path = getattr(terrain, func_name)
+        start_time = time.time()
+        biggest = 0
+        for i in range(num_tests):
+            start = get_random_pos(0, size)
+            end = get_random_pos(0, size)
+            elapsed = time.time()
+            shortest_path(start, end)
+            elapsed = time.time() - elapsed
+            biggest = max(biggest, elapsed)
+        total = time.time() - start_time
+        print("Time for ", num_tests, " pathfinding tests: ", round(total, 5))
+        print("Biggest time: ", round(biggest, 5))
+        print("Average time: ", round(total / num_tests, 5))
+
+    # set seed before every test for deterministic random numbers
+    np.random.seed(0)
+    # small 100x100 terrain, 100 tests
+    test_pathfinding(100, 100)
+
+    # medium 300x300 terrain, 30 tests
+    np.random.seed(0)
+    test_pathfinding(300, 30)
+
+    # big 1000x1000 terrain, 5 tests
+    np.random.seed(0)
+    test_pathfinding(1000, 5)
+
 
 if __name__ == '__main__':
-    g = Terrain(70, 70)
-    print(g.shortest_path((4, 10), (18, 29)))
-# [(4, 10), (3, 9), (2, 8), (1, 9), (0, 10), (0, 11), (0, 12), (0, 13), (0, 14), (0, 15), (0, 16), (0, 17), (0, 18), (0, 19), (0, 20), (0, 21), (0, 22), (0, 23), (0, 24), (1, 25), (2, 26), (2, 27), (3, 28), (4, 29), (5, 30), (6, 31), (7, 32), (8, 33), (9, 32), (10, 31), (11, 30), (12, 30), (13, 30), (14, 30), (15, 29), (16, 28), (17, 28), (18, 29)]
+    print("A*")
+    pathfinding_benchmark("shortest_path")
+    print("Djikstra")
+    pathfinding_benchmark("_shortest_path_old")
 
-# tests
-# cur_path = os.path.dirname(__file__)
-# print(cur_path)
-# new_path = cur_path.replace('src\\Visualization', 'logs.plk')
-# print(new_path)
-
-# g = GridPickle(300, 'logs.plk')
+    # g = Terrain(100, 100)
+    # print(g.shortest_path((4, 10), (18, 29)))

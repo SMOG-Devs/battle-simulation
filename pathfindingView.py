@@ -17,7 +17,7 @@ class Game:
         self.done = False
         self.clock = pygame.time.Clock()
         self.terrain = Terrain(size, size)  # TODO: automatic size of terrain
-        self.camera = Camera(0, 0, size, 50)
+        self.camera = Camera(0, 0, size, size)
         self.running = True  # state of simulation (running / stopped)
 
         self.path_start: (int, int) = None
@@ -120,4 +120,4 @@ class Game:
 
 
 if __name__ == "__main__":
-    Game(100)
+    Game(150)
