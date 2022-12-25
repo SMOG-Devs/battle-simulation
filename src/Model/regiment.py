@@ -27,11 +27,20 @@ class Regiment:
     def _generate_positions(quantity: int, position: Tuple[int, int]) -> List[Tuple[int, int]]:
         positions = []
         x, y = position
-        left = round(np.sqrt(quantity))
+        units_per_line = round(np.sqrt(quantity))
+        square = quantity & units_per_line != 0
+
+        x_range = x + units_per_line * 2
+        y_range = y + (units_per_line + square) * 2
+
+        assert not any(x <= curr_x <= x_range and y <= curr_y <= y_range for curr_x, curr_y in
+                       Regiment.battlefield.positions.values()), 'Two regiments are intercepting'
+
         for i in range(1, quantity + 1):
             positions.append((x, y))
+            print(x,y)
             x += 2
-            if i % left == 0:
+            if i % units_per_line == 0:
                 x = position[0]
                 y += 2
 
