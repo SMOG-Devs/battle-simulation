@@ -11,3 +11,6 @@ Run `pathfinding.py` to visualise pathfinding algorithm.
 Use left and right mouse button to set start and end of the path.
 Will print time of calculation in console.
 Size of the map is crucial for the time of calculation.
+
+## Pathfinding benchmark
+Run src/Visualization/grid.py to benchmark pathfinding algorithms.
