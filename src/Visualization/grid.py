@@ -1,9 +1,9 @@
-import collections
 import pickle
 from abc import ABC
-import os
 from itertools import product
-import heapq
+from queue import PriorityQueue
+from dataclasses import dataclass, field
+from typing import Tuple
 
 from pygame import Color
 
@@ -162,7 +162,6 @@ class Terrain:
                     neighbours.append((node[0] + i, node[1] + j))
         return neighbours
 
-
     def shortest_path(self, start: (int, int), end: (int, int)) -> [(int, int)]:
         """
         Calculates the shortest path from start to end
@@ -195,23 +194,19 @@ class Terrain:
         # path.reverse()
         # return path
 
-        open = []
-        closed = []
-        open.append(start)
-        dist = {node: float('inf') for node in self.__get_nodes()}
+        @dataclass(order=True)
+        class PrioritizedItem:
+            priority: int
+            item: Tuple[int,int] = field(compare=False)
+
+        open = PriorityQueue()
+        open.put(PrioritizedItem(0,start))
+        dist = dict()
         dist[start] = 0
-        prev = {node: None for node in self.__get_nodes()}
-        while open:
-            current = open[0]
-            for node in self.__get_neighbors(current):
-                if node not in closed:
-                    if node not in open:
-                        heapq.heappush(open, node)  # push to correct position, important
-                    if dist[node] > dist[current] + self.grid[node[0]][node[1]]:
-                        dist[node] = dist[current] + self.grid[node[0]][node[1]]  # self.grid[x][y] have weight of the move
-                        prev[node] = current
-            open.remove(current)
-            closed.append(current)
+        prev = dict()
+        prev[start] = None
+        while not open.empty():
+            current = open.get().item
             if current == end:
                 path, u = [], end
                 while prev[u]:
@@ -220,13 +215,21 @@ class Terrain:
                 path.append(start)
                 path.reverse()
                 return path
+            for node in self.__get_neighbors(current):
+                node = tuple(node)
+                new_dist = dist[current] + self.grid[node[0]][node[1]]
+                if node not in dist or dist[node] > new_dist:
+                    dist[node] = new_dist  # self.grid[x][y] have weight of the move
+                    prev[node] = current
+                    open.put(PrioritizedItem(new_dist, node))
+
         raise Exception("No path found")  # shouldn't happen
 
 
 if __name__ == '__main__':
     g = Terrain(70, 70)
     print(g.shortest_path((4, 10), (18, 29)))
-#[(4, 10), (3, 9), (2, 8), (1, 9), (0, 10), (0, 11), (0, 12), (0, 13), (0, 14), (0, 15), (0, 16), (0, 17), (0, 18), (0, 19), (0, 20), (0, 21), (0, 22), (0, 23), (0, 24), (1, 25), (2, 26), (2, 27), (3, 28), (4, 29), (5, 30), (6, 31), (7, 32), (8, 33), (9, 32), (10, 31), (11, 30), (12, 30), (13, 30), (14, 30), (15, 29), (16, 28), (17, 28), (18, 29)]
+# [(4, 10), (3, 9), (2, 8), (1, 9), (0, 10), (0, 11), (0, 12), (0, 13), (0, 14), (0, 15), (0, 16), (0, 17), (0, 18), (0, 19), (0, 20), (0, 21), (0, 22), (0, 23), (0, 24), (1, 25), (2, 26), (2, 27), (3, 28), (4, 29), (5, 30), (6, 31), (7, 32), (8, 33), (9, 32), (10, 31), (11, 30), (12, 30), (13, 30), (14, 30), (15, 29), (16, 28), (17, 28), (18, 29)]
 
 # tests
 # cur_path = os.path.dirname(__file__)
