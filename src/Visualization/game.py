@@ -184,10 +184,9 @@ class Game:
         self.terrain_texture.fill((123, 178, 0))
         tree = pygame.image.load("src/Visualization/Sprites/tree.png").convert()
         tree.set_colorkey((255, 255, 255))
-
         mountains = pygame.image.load("src/Visualization/Sprites/mountains.png").convert()
-
         river = pygame.image.load("src/Visualization/Sprites/river.png").convert()
+        dark_grass = pygame.image.load("src/Visualization/Sprites/dark_grass.png").convert()
 
         terrain = self.terrain.get_grid()
         for i, row in enumerate(terrain):
@@ -198,6 +197,10 @@ class Game:
                     self.terrain_texture.blit(river, (i*32, j*32))
                 else:  # grass and default
                     self.terrain_texture.blit(tree, (i*32, j*32))
+                    # if water is nearby, draw dark grass
+                    if 0 < i < len(terrain) - 1 and 0 < j < len(terrain[0]) - 1:
+                        if terrain[i-1][j] == 10 or terrain[i+1][j] == 10 or terrain[i][j-1] == 10 or terrain[i][j+1] == 10:
+                            self.terrain_texture.blit(dark_grass, (i*32, j*32))
 
 
 
