@@ -18,6 +18,7 @@ class Game:
         self.clock = pygame.time.Clock()
         self.grid = GridPickle(400, logs_path)  # TODO: automatic size of camera and grid from model.constrains
         self.terrain = Terrain(400, 400)  # TODO: automatic size of terrain from model.constrains
+        self.terrain_texture = None
         self.camera = Camera(0, 0, 400, 50)
         self.buttons: [Button] = []
         self.frame = 0  # frames counter (pygame frames, not related to simulation steps)
@@ -30,6 +31,7 @@ class Game:
         self.__button_start_stop: Button = None
 
         # run the game
+        self.__prepare_texture()
         self.__init_ui()
         self.__main_loop()
 
@@ -177,6 +179,29 @@ class Game:
                     if grid[click_x][click_y] != 0:
                         self.__draw_unit_info(self.grid.get_description(click_x, click_y))
 
+    def __prepare_texture(self):
+        self.terrain_texture = pygame.Surface((400*32, 400*32))  # TODO: make it dynamic (size)
+        self.terrain_texture.fill((123, 178, 0))
+        tree = pygame.image.load("src/Visualization/Sprites/tree.png").convert()
+        tree.set_colorkey((255, 255, 255))
+
+        mountains = pygame.image.load("src/Visualization/Sprites/mountains.png").convert()
+
+        river = pygame.image.load("src/Visualization/Sprites/river.png").convert()
+
+        terrain = self.terrain.get_grid()
+        for i, row in enumerate(terrain):
+            for j, elem in enumerate(row):
+                if elem == 3:  # mountains
+                    self.terrain_texture.blit(mountains, (i*32, j*32))
+                elif elem == 10:  # river
+                    self.terrain_texture.blit(river, (i*32, j*32))
+                else:  # grass and default
+                    self.terrain_texture.blit(tree, (i*32, j*32))
+
+
+
+
     def __render_terrain(self):
         screen_size = self.WINDOW_SIZE
         cells_x = self.camera.width
@@ -184,17 +209,24 @@ class Game:
 
         cells_size = math.ceil(screen_size[0] / cells_y)
 
-        grid = self.terrain.get_grid()
-        colors_dict = self.terrain.get_colors()
-        for row in range(cells_x):
-            for column in range(cells_y):
-                color = colors_dict.get(grid[row + self.camera.x][column + self.camera.y], (0, 0, 0))  # default color is black
-                pygame.draw.rect(self.screen,
-                                 color,
-                                 [cells_size * row,
-                                  cells_size * column,
-                                  cells_size,
-                                  cells_size])
+        # grid = self.terrain.get_grid()
+        # colors_dict = self.terrain.get_colors()
+        # for row in range(cells_x):
+        #     for column in range(cells_y):
+        #         color = colors_dict.get(grid[row + self.camera.x][column + self.camera.y], (0, 0, 0))  # default color is black
+        #         pygame.draw.rect(self.screen,
+        #                          color,
+        #                          [cells_size * row,
+        #                           cells_size * column,
+        #                           cells_size,
+        #                           cells_size])
+
+        terr_copy = self.terrain_texture.subsurface((self.camera.x * 32, self.camera.y * 32, cells_x*32, cells_y*32))
+        scaled_x = cells_size * cells_x
+        scaled_y = cells_size * cells_y
+        terr_copy = pygame.transform.scale(terr_copy, (scaled_x, scaled_y))
+
+        self.screen.blit(terr_copy, (0, 0))
 
 
     def __render_ui(self):
@@ -204,15 +236,14 @@ class Game:
     def __main_loop(self):
         while True:
             grid = self.grid.get_grid()
-
             # input
             self.__input_handler()
 
-            # render grid
             self.screen.fill(pygame.Color(200, 200, 200))
-            self.__render_terrain()  # TODO: optimize, rendering the same terrain every time is a waste
+            # render terrain
+            self.__render_terrain()
+            # render grid
             self.__render_grid(grid)
-
             # render UI
             self.__render_ui()
 
