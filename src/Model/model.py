@@ -4,25 +4,26 @@ from typing import List, Tuple, Dict
 import numpy as np
 from .regiment import Regiment
 import pickle
-from .MeasureSystem import closestRegiment, centroidOfRegiment
+from .World.World import World
+from .World.Terrain import Terrain
 
 
 class BattleModel(ap.Model):
 
     def __init__(self, parameters=None, _run_id=None, steps=150, logs_filename: str = 'logs.plk'):
         super().__init__(parameters, _run_id)
-        self.battle_field: ap.Grid = None
+        self.battle_field: World = None
         self.army = dict()  # required for self.return_soldiers_color but should be removed in the future
         self.steps = steps
         self.regiments: [Regiment] = []  # list of all regiments
         self.logs_filename = logs_filename
-        self.logs: [[(type, Team, int, int, (int, int))]] = []  # list of frames, each frame have list of tuples: type, team, status, health, (positionX, positionY)
+        self.logs: [[(type, Team, int, int, (int,
+                                             int))]] = []  # list of frames, each frame have list of tuples: type, team, status, health, (positionX, positionY)
         # model manages regiments, regiments manages units
-
 
     def setup(self):
         """ Initiate a list of new agents. """
-        self.battle_field = ap.Grid(self, (FIELD_WIDTH, FIELD_HEIGHT), track_empty=True, check_border=True)
+        self.battle_field = World(ap.Grid(self, (FIELD_WIDTH, FIELD_HEIGHT), track_empty=True, check_border=True), Terrain(FIELD_WIDTH,FIELD_HEIGHT))
         Regiment.setup(self, self.battle_field)
         for key, values in self.p['army_dist'].items():
             self._setup_army(key, values['quantity'], values['position'])
@@ -42,13 +43,15 @@ class BattleModel(ap.Model):
     def step(self):
         """ Call a method for every regiment. """
 
+        reversed_positions = self.__inverse_position()
+        print(any(len(agents) > 1 for agents in reversed_positions.values()))
+
         for reg in self.regiments:
             if reg.is_alive():  # I can't find out why that 'if' is necessary
                 # all dead units are removed with .remove_dead() functions and empty
                 # regiments are also removed...........
                 # but it doesnt work without this 'if'
-                reg.move()
-
+                reg.move(reversed_positions)
 
         for reg in self.regiments:
             reg.attack()
@@ -67,16 +70,12 @@ class BattleModel(ap.Model):
             data += " " + str(reg.units_count())
         print(data)
 
-
         if self.t == self.steps:
             self.stop()
 
-
-
-
-    def __inverse_position(self) -> Dict[Tuple[int,int],List[ap.Agent]]:
+    def __inverse_position(self) -> Dict[Tuple[int, int], List[ap.Agent]]:
         inv_pos = {}
-        for k, v in self.battle_field.positions.items():
+        for k, v in self.battle_field.grid.positions.items():
             inv_pos[v] = inv_pos.get(v, []) + [k]
 
         return inv_pos
@@ -114,14 +113,11 @@ class BattleModel(ap.Model):
 
     def _save_frame(self):
         current_frame = []
-        for unit in self.battle_field.agents:
+        for unit in self.battle_field.grid.agents:
             current_frame.append((str(unit.type), str(unit.team), unit.status, unit.health,
-                                  self.battle_field.positions[unit]))
+                                  self.battle_field.grid.positions[unit]))
         self.logs.append(current_frame)
 
     def save_logs_as_pickle(self, filename):
         with open(filename, 'wb') as file:
             pickle.dump(self.logs, file)
-
-
-

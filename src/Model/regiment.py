@@ -1,21 +1,22 @@
 from __future__ import annotations
 
 from math import sqrt
-from typing import Tuple, List
+from typing import Tuple, List, Dict
 
 import agentpy as ap
 from .model_constants import Agent_type
 import numpy as np
-from src.Agent.unit import Team, Orders
+from src.Agent.unit import Team
+from .World.World import World
 
 
 class Regiment:
     regiments: List = []  # static variable, contains all regiments
     model: ap.Model = None
-    battlefield: ap.Grid = None
+    battlefield: World = None
 
     @staticmethod  # call it first before creating any object Regiment
-    def setup(model: ap.Model, grid: ap.Grid):
+    def setup(model: ap.Model, grid: World):
         Regiment.model = model
         Regiment.battlefield = grid
 
@@ -40,7 +41,7 @@ class Regiment:
     def __init__(self, quantity: int, agent_type: Agent_type, team: Team, position: (int, int)):
         self.units = ap.AgentList(Regiment.model, quantity, agent_type)
         positions_for_soldiers = Regiment._generate_positions(quantity, position)
-        Regiment.battlefield.add_agents(self.units, positions=positions_for_soldiers)
+        Regiment.battlefield.grid.add_agents(self.units, positions=positions_for_soldiers)
         Regiment._add_regiment(self)
         self.units.setup_map_binding(self.battlefield)
         self.units.team = team
@@ -49,7 +50,7 @@ class Regiment:
     def units_count(self) -> int:
         return len(self.units)
 
-    def move(self):
+    def move(self, reversed_positions:  Dict[Tuple[int, int], List[ap.Agent]]):
 
         def direction_to(regiment: Regiment) -> (float, float):
             # TODO: make if faster
@@ -73,7 +74,7 @@ class Regiment:
             return  # This shouldn't happen, where there is no enemy, battle is won
 
         # direction = direction_to(target[1]) we don't pass direction, we pass enemy and self centroid tuples instead
-        self.units.move(target[1].__centroid_of_regiment(), self.__centroid_of_regiment())
+        self.units.move(target[0], self.__centroid_of_regiment())
 
     def attack(self):
         #  in future it may require target Regiment
@@ -82,7 +83,7 @@ class Regiment:
 
     def remove_dead(self):
         # Regiment.battlefield.remove_agents(self.units.select(self.units.health <= 0)) # doesn't work, idk why
-        Regiment.battlefield.remove_agents(self.units.select(self.units.health <= 0))
+        Regiment.battlefield.grid.remove_agents(self.units.select(self.units.health <= 0))
         self.units = self.units.select(self.units.health > 0)
 
     def is_alive(self) -> bool:  # check if any soldier is alive
@@ -119,7 +120,7 @@ class Regiment:
             return None
         x_sum, y_sum = (0, 0)
         for agent in self.units:
-            pos = self.battlefield.positions[agent]
+            pos = self.battlefield.grid.positions[agent]
             x_sum += pos[0]
             y_sum += pos[1]
 

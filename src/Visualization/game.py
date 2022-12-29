@@ -1,6 +1,7 @@
 import math
 
 import pygame
+from pygame import Color
 from .camera import Camera
 from .UI import Button
 from .grid import GridPickle, Terrain
@@ -185,7 +186,7 @@ class Game:
         cells_size = math.ceil(screen_size[0] / cells_y)
 
         grid = self.terrain.get_grid()
-        colors_dict = self.terrain.get_colors()
+        colors_dict = {1: Color(0, 200, 0), 3: Color(100, 100, 100), 10: Color(0, 0, 255)}
         for row in range(cells_x):
             for column in range(cells_y):
                 color = colors_dict.get(grid[row + self.camera.x][column + self.camera.y], (0, 0, 0))  # default color is black
