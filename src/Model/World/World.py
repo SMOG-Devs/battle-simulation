@@ -50,7 +50,7 @@ class World:
                 return path
             for node in self.__get_neighbors(current):
                 node = tuple(node)
-                new_g = g[current] + self.grid[node[0]][node[1]]
+                new_g = g[current] + self.terrain.grid[node[0]][node[1]]
                 new_dist = new_g + heuristic(node, end)  # f cost
                 if node not in dist or dist[node] > new_dist:
                     dist[node] = new_dist  # self.grid[x][y] have weight of the move
