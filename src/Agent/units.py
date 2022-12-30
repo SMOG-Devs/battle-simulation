@@ -7,6 +7,7 @@ import random
 from src.Agent.unit import Unit
 from src.Agent.unit import Orders
 from src.Agent.unit import Status
+import random
 
 
 
@@ -171,7 +172,7 @@ class Infantry(Unit):
 
     #########################
 
-    def move(self, enemy_position: Tuple[int, int], regiment_position: Tuple[int, int]):
+    def move(self, enemy_position: Tuple[int, int], regiment_position: Tuple[int, int],):
         match self.regiment_order:
             case Orders.MoveAndAttack:
                 self.__calculateVector(enemy_position, regiment_position)
