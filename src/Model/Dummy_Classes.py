@@ -1,5 +1,6 @@
 import agentpy as ap
 import random
+import agentpy as ap
 from enum import Enum
 from typing import Tuple, Dict, List
 from copy import deepcopy
