@@ -1,5 +1,5 @@
-import src.Visualization.game as game
+from src.Visualization.game import Game
 
 
 def run(in_filename: str):
-    game.run(logs_path=in_filename)
+    Game(in_filename)
