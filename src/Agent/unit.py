@@ -2,6 +2,7 @@ from abc import ABC
 from enum import Enum
 from math import sqrt
 from typing import Tuple, Dict, List
+from src.Model.World.World import World
 
 import agentpy as ap
 import random
@@ -32,12 +33,11 @@ class Unit(ap.Agent):
         Initialize variables
         """
         super().__init__(model, *args, **kwargs)
-        self.battle_front: ap.Grid
+        self.battle_front: World
         self.speed: float
         self.pos: int
+        self.path: List[Tuple[int,int]]
         self.regiment_order: Orders
-        self.overflow_y = 0
-        self.overflow_x = 0
         self.team: Team
         self.health = 100
         self.damage = 20
@@ -50,13 +50,13 @@ class Unit(ap.Agent):
         """
         print("setup have no override")
 
-    def setup_map_binding(self, battle_front: ap.Grid):
+    def setup_map_binding(self, battle_front: World):
         """
         Setup self positions and ap.Grid
         :argument battle_front: ap.Grid
         """
         self.battle_front = battle_front
-        self.pos = self.battle_front.positions[self]
+        self.pos = self.battle_front.grid.positions[self]
 
     def move(self, enemy_position: Tuple[int, int], regiment_position: Tuple[int, int]):
         """
