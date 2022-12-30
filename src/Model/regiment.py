@@ -6,9 +6,7 @@ from typing import Tuple, List
 import agentpy as ap
 from .model_constants import Agent_type
 import numpy as np
-from src.Agent.unit import Team, Status
-import math
-import random
+from src.Agent.unit import Team, Orders
 
 
 class Regiment:
@@ -56,8 +54,6 @@ class Regiment:
         self.units.setup_map_binding(self.battlefield)
         self.units.team = team
         self.team = team
-        self.start_quantity = len(self.units)
-        self.fear_factor = 0
 
     def units_count(self) -> int:
         return len(self.units)
@@ -86,11 +82,7 @@ class Regiment:
             return  # This shouldn't happen, where there is no enemy, battle is won
 
         # direction = direction_to(target[1]) we don't pass direction, we pass enemy and self centroid tuples instead
-        for agent in self.units:
-            if agent.status != Status.Surrender and random.random() < self.fear_factor:
-                agent.status = Status.Surrender
-
-        self.units.move(target[1].__centroid_of_regiment(), self.__centroid_of_regiment(),self.fear_factor)
+        self.units.move(target[1].__centroid_of_regiment(), self.__centroid_of_regiment())
 
     def attack(self):
         #  in future it may require target Regiment
@@ -141,10 +133,3 @@ class Regiment:
             y_sum += pos[1]
 
         return x_sum // len(self.units), y_sum // len(self.units)
-
-    def examine_regiment(self):
-        alive = len(self.units)
-        seriously_damaged = len(self.units.select(self.units.health < 0.25 * self.units.health))
-        self.fear_factor = math.e**(-4*(alive/self.start_quantity)-(seriously_damaged/alive))
-
-
