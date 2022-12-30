@@ -35,41 +35,41 @@ class Terrain:
     def __get_nodes(self):
         return [(i, j) for i, j in product(range(self.x), range(self.y))]
 
-    def _shortest_path_old(self, start: (int, int), end: (int, int)) -> [(int, int)]:
-        """
-        Calculates the shortest path from start to end
-        :param start: start position
-        :param end: end position
-        :return: list of positions
-        """
-
-        @dataclass(order=True)
-        class PrioritizedItem:
-            priority: int
-            item: Tuple[int, int] = field(compare=False)
-
-        open = PriorityQueue()
-        open.put(PrioritizedItem(0, start))
-        dist = dict()
-        dist[start] = 0
-        prev = dict()
-        prev[start] = None
-        while not open.empty():
-            current = open.get().item
-            if current == end:
-                path, u = [], end
-                while prev[u]:
-                    path.append(u)
-                    u = prev[u]
-                path.append(start)
-                path.reverse()
-                return path
-            for node in self.__get_neighbors(current):
-                node = tuple(node)
-                new_dist = dist[current] + self.grid[node[0]][node[1]]
-                if node not in dist or dist[node] > new_dist:
-                    dist[node] = new_dist  # self.grid[x][y] have weight of the move
-                    prev[node] = current
-                    open.put(PrioritizedItem(new_dist, node))
-
-        raise Exception("No path found")  # shouldn't happen
+    # def _shortest_path_old(self, start: (int, int), end: (int, int)) -> [(int, int)]:
+    #     """
+    #     Calculates the shortest path from start to end
+    #     :param start: start position
+    #     :param end: end position
+    #     :return: list of positions
+    #     """
+    #
+    #     @dataclass(order=True)
+    #     class PrioritizedItem:
+    #         priority: int
+    #         item: Tuple[int, int] = field(compare=False)
+    #
+    #     open = PriorityQueue()
+    #     open.put(PrioritizedItem(0, start))
+    #     dist = dict()
+    #     dist[start] = 0
+    #     prev = dict()
+    #     prev[start] = None
+    #     while not open.empty():
+    #         current = open.get().item
+    #         if current == end:
+    #             path, u = [], end
+    #             while prev[u]:
+    #                 path.append(u)
+    #                 u = prev[u]
+    #             path.append(start)
+    #             path.reverse()
+    #             return path
+    #         for node in self.__get_neighbors(current):
+    #             node = tuple(node)
+    #             new_dist = dist[current] + self.terrain.grid[node[0]][node[1]]
+    #             if node not in dist or dist[node] > new_dist:
+    #                 dist[node] = new_dist  # self.grid[x][y] have weight of the move
+    #                 prev[node] = current
+    #                 open.put(PrioritizedItem(new_dist, node))
+    #
+    #     raise Exception("No path found")  # shouldn't happen
