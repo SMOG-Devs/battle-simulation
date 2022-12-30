@@ -31,6 +31,7 @@ class Game:
         self.__button_start_stop: Button = None
 
         # run the game
+        self.__load_sprites()
         self.__prepare_texture()
         self.__init_ui()
         self.__main_loop()
@@ -154,9 +155,13 @@ class Game:
 
                 elif grid[row + self.camera.x][column + self.camera.y] == 2:
                     color = pygame.Color("green")
+                    self.screen.blit(self.axe, (cells_size * row, cells_size * column))
+                    continue
 
                 elif grid[row + self.camera.x][column + self.camera.y] == 3:
                     color = pygame.Color("red")
+                    self.screen.blit(self.spear, (cells_size * row, cells_size * column))
+                    continue
 
                 elif grid[row + self.camera.x][column + self.camera.y] != 0:  # shouldn't happen
                     color = pygame.Color("yellow")
@@ -169,15 +174,28 @@ class Game:
                                   cells_size])
 
                 # unit on mouse hover info
-                mouse_over_ui = False
-                for button in self.buttons:
-                    if button.rect().collidepoint(pygame.mouse.get_pos()):
-                        mouse_over_ui = True
-                        break
-                if not mouse_over_ui:
-                    click_x, click_y = self.camera.screen_to_grid_point(*pygame.mouse.get_pos(), cells_size)
-                    if grid[click_x][click_y] != 0:
-                        self.__draw_unit_info(self.grid.get_description(click_x, click_y))
+        mouse_over_ui = False
+        for button in self.buttons:
+            if button.rect().collidepoint(pygame.mouse.get_pos()):
+                mouse_over_ui = True
+                break
+        if not mouse_over_ui:
+            click_x, click_y = self.camera.screen_to_grid_point(*pygame.mouse.get_pos(), cells_size)
+            if grid[click_x][click_y] != 0:
+                self.__draw_unit_info(self.grid.get_description(click_x, click_y))
+
+        self.screen.blit(self.axe, (110, 110))
+        self.screen.blit(self.spear, (210, 110))
+
+    def __load_sprites(self):
+        sheet = pygame.image.load("src/Visualization/Sprites/soldiers.png").convert()
+        axe = sheet.subsurface(pygame.Rect(0, 0, 80, 80)).copy()
+        spear = sheet.subsurface(pygame.Rect(80*3, 0, 80, 80)).copy()
+        self.axe = pygame.transform.scale(axe, (20, 20))
+        self.axe.set_colorkey((255, 255, 255))
+        self.spear = pygame.transform.scale(spear, (20, 20))
+        self.spear.set_colorkey((255, 255, 255))
+
 
     def __prepare_texture(self):
         self.terrain_texture = pygame.Surface((400*32, 400*32))  # TODO: make it dynamic (size)
