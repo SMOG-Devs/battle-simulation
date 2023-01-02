@@ -1,9 +1,12 @@
 import agentpy as ap
+import numpy as np
+
 from .Terrain import Terrain
 
 from queue import PriorityQueue
 from dataclasses import dataclass, field
-from typing import Tuple
+from typing import Tuple, List
+from itertools import product
 
 class World:
 
@@ -14,11 +17,12 @@ class World:
         self.grid = grid
         self.terrain = terrain
 
-    def shortest_path(self, start: (int, int), end: (int, int)) -> [(int, int)]:
+    def shortest_path(self, start: (int, int), end: (int, int), foot_range: int = 10) -> [(int, int)]:
         """
         Calculates the shortest path from start to end
         :param start: start position
         :param end: end position
+        :param foot_range: area to search
         :return: list of positions
         """
 
@@ -32,6 +36,8 @@ class World:
 
         open = PriorityQueue()
         open.put(PrioritizedItem(0, start))
+        search_area = self.__calculate_search_neighbourghood(start, foot_range)
+        new_end = self.__project_end(start, end, search_area)
         dist = dict()
         dist[start] = 0  # f cost
         g = dict()  # g cost
@@ -40,15 +46,15 @@ class World:
         prev[start] = None
         while not open.empty():
             current = open.get().item
-            if current == end:
-                path, u = [], end
+            if current == new_end:
+                path, u = [], current
                 while prev[u]:
                     path.append(u)
                     u = prev[u]
                 path.append(start)
                 path.reverse()
                 return path
-            for node in self.__get_neighbors(current):
+            for node in self.__get_neighbors(current, search_area):
                 node = tuple(node)
                 new_g = g[current] + self.terrain.grid[node[0]][node[1]]
                 new_dist = new_g + heuristic(node, end)  # f cost
@@ -60,12 +66,44 @@ class World:
 
         raise Exception("No path found")  # shouldn't happen
 
-    def __get_neighbors(self, node):
+    def __get_neighbors(self, node, search_area):
         neighbours = []
         for i in range(-1, 2):
             for j in range(-1, 2):
-                if i == 0 and j == 0:
+                new_x = node[0] + i
+                new_y = node[1] + j
+                if (i == 0 and j == 0) or (new_y not in search_area[1] and new_x not in search_area[0]):
                     continue
-                if 0 <= node[0] + i < self.grid.shape[0] and 0 <= node[1] + j < self.grid.shape[1]:
-                    neighbours.append((node[0] + i, node[1] + j))
+                if 0 <= new_x < self.grid.shape[0] and 0 <= new_y < self.grid.shape[1]:
+                    neighbours.append((new_x, new_y))
         return neighbours
+
+    def __calculate_search_neighbourghood(self, start: Tuple[int,int], foot_range: int) -> List[np.ndarray]:
+        upper_limit_x = self.grid.shape[0] - foot_range - 1
+        upper_limit_y = self.grid.shape[1] - foot_range - 1
+        x_min = (foot_range < start[0]) * (start[0] - foot_range)
+        x_max = (start[0] > upper_limit_x) * (self.grid.shape[0] - 1) + (
+                    start[0] <= upper_limit_x) * (start[0] + foot_range)
+        y_min = (foot_range < start[1]) * (start[1] - foot_range)
+        y_max = (start[1] > upper_limit_y) * (self.grid.shape[1] - 1) + (
+                    start[1] <= upper_limit_y) * (start[1] + foot_range)
+
+        neighbourhood_list = [np.arange(x_min, x_max + 1), np.arange(y_min, y_max + 1)]
+
+        return neighbourhood_list
+
+    def __project_end(self, start: Tuple[int,int], end: Tuple[int,int], search_area: List[np.ndarray]) -> Tuple[int,int]:
+        if end[0] in search_area[0] and end[1] in search_area[1]:
+            return end
+
+        corner = np.array(max(search_area[0]), max(search_area[1]))
+        np_start = np.array(start)
+        np_stop = np.array(end)
+
+        dist_vector = np_stop - np_start
+        dist = np.linalg.norm(dist_vector)
+        direction_vector = dist_vector / dist
+
+        multiplier = np.min(abs((corner-start)/(direction_vector + 1e-10)))
+
+        return tuple(np.round(start + direction_vector * multiplier))
