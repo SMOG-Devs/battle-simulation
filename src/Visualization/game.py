@@ -19,7 +19,7 @@ class Game:
         self.clock = pygame.time.Clock()
         self.grid = GridPickle(400, logs_path)  # TODO: automatic size of camera and grid from model.constrains
         self.terrain = Terrain(400, 400)  # TODO: automatic size of terrain from model.constrains
-        self.camera = Camera(0, 0, 400, 50)
+        self.camera = Camera(0, 0, 400, 400)
         self.buttons: [Button] = []
         self.frame = 0  # frames counter (pygame frames, not related to simulation steps)
         self.step = 0  # step in simulation

@@ -35,12 +35,12 @@ class Regiment:
         y_range = y + (units_per_line + square) * 2
 
         assert not any(x <= curr_x <= x_range and y <= curr_y <= y_range for curr_x, curr_y in
-                       Regiment.battlefield.positions.values()), 'Two regiments are interceptingi'
+                       Regiment.battlefield.grid.positions.values()), 'Two regiments are interceptingi'
 
         for i in range(1, quantity + 1):
             positions.append((x, y))
             x += 2
-            if i % left == 0:
+            if i % units_per_line == 0:
                 x = position[0]
                 y += 2
 
