@@ -2,11 +2,16 @@ class Camera:
     """Represent view of the game world
     width: width and height of view (in grid cells)
     """
-    def __init__(self, x: int = 50, y: int = 50, max_width: int = 100, width: int = 20):
+    def __init__(self, x: int = 50, y: int = 50, max_width: int = 100):
         self.x = x
         self.y = y
-        self.max_width = max_width
-        self.width = width
+        self.max_width = max(max_width, 20)
+        self.allowed_width = [10, 16, 20, 32, 50, 80, 100, 160, 200, 400]  # dividers of 400
+        if self.max_width not in self.allowed_width:
+            import warnings
+            warnings.warn("Camera maxSize should be one of the following: " + str(self.allowed_width))
+        self.size = 2
+        self.width = self.allowed_width[self.size]
 
     def move(self, x: int, y: int):
         """Move camera on grid"""
@@ -15,13 +20,13 @@ class Camera:
         self._normalize_position()
 
     def zoom_in(self):
-        self.width /= 1.3
-        self.width = int(self.width)
+        self.size = min(self.size + 1, len(self.allowed_width) - 1)
+        self.width = self.allowed_width[self.size]
         self._normalize_position()
 
     def zoom_out(self):
-        self.width *= 1.3
-        self.width = int(self.width)
+        self.size = max(self.size - 1, 0)
+        self.width = self.allowed_width[self.size]
         self._normalize_position()
 
     def _normalize_position(self):

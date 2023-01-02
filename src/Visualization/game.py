@@ -19,7 +19,7 @@ class Game:
         self.grid = GridPickle(400, logs_path)  # TODO: automatic size of camera and grid from model.constrains
         self.terrain = Terrain(400, 400)  # TODO: automatic size of terrain from model.constrains
         self.terrain_texture = None
-        self.camera = Camera(0, 0, 400, 50)
+        self.camera = Camera(0, 0, 400)
         self.buttons: [Button] = []
         self.frame = 0  # frames counter (pygame frames, not related to simulation steps)
         self.step = 0  # step in simulation
@@ -138,8 +138,45 @@ class Game:
         screen_size = self.WINDOW_SIZE
         cells_x = self.camera.width
         cells_y = math.ceil(cells_x / screen_size[0] * screen_size[1])
-
         cells_size = math.ceil(screen_size[0] / cells_y)
+        if self.camera.width < 50:
+            self.__render_unit_close(grid, cells_x, cells_y, cells_size)
+        else:
+            self.__render_unit_far_away(grid, cells_x, cells_y, cells_size)
+
+        # unit on mouse hover info
+        mouse_over_ui = False
+        for button in self.buttons:
+            if button.rect().collidepoint(pygame.mouse.get_pos()):
+                mouse_over_ui = True
+                break
+        if not mouse_over_ui:
+            click_x, click_y = self.camera.screen_to_grid_point(*pygame.mouse.get_pos(), cells_size)
+            if grid[click_x][click_y] != 0:
+                self.__draw_unit_info(self.grid.get_description(click_x, click_y))
+
+    def __render_unit_close(self, grid: [[int]], cells_x: int, cells_y: int, cells_size: int):
+        for row in range(cells_x):
+            for column in range(cells_y):
+                color = pygame.Color("white")
+                # ignore empty
+                if grid[row + self.camera.x][column + self.camera.y] == 0:
+                    continue
+                # camera should take care of not showing any tiles outside a grid,
+                # but it needs to have max_width the same as grid cell_count
+                # if row + self.camera.x < len(grid[0]) and column + self.camera.y < len(grid):
+
+                if grid[row + self.camera.x][column + self.camera.y] == 2:
+                    self.screen.blit(self.axe[self.camera.size], (cells_size * row, cells_size * column))
+                    continue
+
+                elif grid[row + self.camera.x][column + self.camera.y] == 3:
+                    self.screen.blit(self.spear[self.camera.size], (cells_size * row, cells_size * column))
+                    continue
+
+
+
+    def __render_unit_far_away(self, grid: [[int]], cells_x: int, cells_y: int, cells_size: int):
         for row in range(cells_x):
             for column in range(cells_y):
                 color = pygame.Color("white")
@@ -155,13 +192,9 @@ class Game:
 
                 elif grid[row + self.camera.x][column + self.camera.y] == 2:
                     color = pygame.Color("green")
-                    self.screen.blit(self.axe, (cells_size * row, cells_size * column))
-                    continue
 
                 elif grid[row + self.camera.x][column + self.camera.y] == 3:
                     color = pygame.Color("red")
-                    self.screen.blit(self.spear, (cells_size * row, cells_size * column))
-                    continue
 
                 elif grid[row + self.camera.x][column + self.camera.y] != 0:  # shouldn't happen
                     color = pygame.Color("yellow")
@@ -173,28 +206,20 @@ class Game:
                                   cells_size,
                                   cells_size])
 
-                # unit on mouse hover info
-        mouse_over_ui = False
-        for button in self.buttons:
-            if button.rect().collidepoint(pygame.mouse.get_pos()):
-                mouse_over_ui = True
-                break
-        if not mouse_over_ui:
-            click_x, click_y = self.camera.screen_to_grid_point(*pygame.mouse.get_pos(), cells_size)
-            if grid[click_x][click_y] != 0:
-                self.__draw_unit_info(self.grid.get_description(click_x, click_y))
-
-        self.screen.blit(self.axe, (110, 110))
-        self.screen.blit(self.spear, (210, 110))
-
     def __load_sprites(self):
         sheet = pygame.image.load("src/Visualization/Sprites/soldiers.png").convert()
         axe = sheet.subsurface(pygame.Rect(0, 0, 80, 80)).copy()
         spear = sheet.subsurface(pygame.Rect(80*3, 0, 80, 80)).copy()
-        self.axe = pygame.transform.scale(axe, (20, 20))
-        self.axe.set_colorkey((255, 255, 255))
-        self.spear = pygame.transform.scale(spear, (20, 20))
-        self.spear.set_colorkey((255, 255, 255))
+        self.axe = [pygame.transform.scale(axe, (self.WINDOW_SIZE[0] / size, self.WINDOW_SIZE[1] / size)) for size in self.camera.allowed_width]
+
+        for axe in self.axe:
+            axe.set_colorkey((255, 255, 255))
+
+        self.spear = [pygame.transform.scale(spear, (self.WINDOW_SIZE[0] / size, self.WINDOW_SIZE[1] / size)) for size in self.camera.allowed_width]
+        for spear in self.spear:
+            spear.set_colorkey((255, 255, 255))
+
+
 
 
     def __prepare_texture(self):
