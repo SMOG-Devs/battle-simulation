@@ -2,6 +2,8 @@ from dataclasses import dataclass, field
 from itertools import product
 from queue import PriorityQueue
 from typing import Tuple
+from PIL import Image
+import numpy as np
 
 class Terrain:
     def __init__(self, x: int, y: int):  # x y: size of the grid
@@ -12,22 +14,32 @@ class Terrain:
             self.grid.append([])
             for j in range(self.y):
                 self.grid[i].append(0)
+
+        image = Image.open('src//Visualization//Sprites//Map1.png')
+        image = np.asarray(image)
+        code = {(0, 255, 0): 1, (0, 0, 255): 10, (100, 100, 100): 3}
         for i in range(self.x):
             for j in range(self.y):
-                if abs(i - j) < 3:  # river in the middle: weight 10
-                    self.grid[i][j] = 10
-                elif i > j + 10:  # mountains at the top/right: weight 3
-                    self.grid[i][j] = 3
-                else:  # grass in bot/left: weight 1
-                    self.grid[i][j] = 1
+                r, g, b, a = image[i][j]
+                self.grid[j][i] = code[(r, g, b)]  # TODO: i and j are swapped
 
-                    # three obstacles in the middle of the grass
-                    if (i - 10) ** 2 + (j - 20) ** 2 < 10 ** 2:
-                        self.grid[i][j] = 3
-                    if (i - 40) ** 2 + (j - 30) ** 2 < 10 ** 2:
-                        self.grid[i][j] = 3
-                    if (i - 30) ** 2 + (j - 100) ** 2 < 10 ** 2:
-                        self.grid[i][j] = 3
+        # for i in range(self.x):
+        #     for j in range(self.y):
+        #         # test terrain:
+        #         if abs(i - j) < 3:  # river in the middle: weight 10
+        #             self.grid[i][j] = 10
+        #         elif i > j + 10:  # mountains at the top/right: weight 3
+        #             self.grid[i][j] = 3
+        #         else:  # grass in bot/left: weight 1
+        #             self.grid[i][j] = 1
+        #
+        #             # three obstacles in the middle of the grass
+        #             if (i - 10) ** 2 + (j - 20) ** 2 < 10 ** 2:
+        #                 self.grid[i][j] = 3
+        #             if (i - 40) ** 2 + (j - 30) ** 2 < 10 ** 2:
+        #                 self.grid[i][j] = 3
+        #             if (i - 30) ** 2 + (j - 100) ** 2 < 10 ** 2:
+        #                 self.grid[i][j] = 3
 
     def get_grid(self) -> [[]]:  # grid with weights
         return self.grid
