@@ -19,7 +19,8 @@ class Game:
         self.clock = pygame.time.Clock()
         self.grid = GridPickle(400, logs_path)  # TODO: automatic size of camera and grid from model.constrains
         self.terrain = Terrain(400, 400)  # TODO: automatic size of terrain from model.constrains
-        self.camera = Camera(0, 0, 400, 400)
+        self.terrain_texture = None
+        self.camera = Camera(0, 0, 400)
         self.buttons: [Button] = []
         self.frame = 0  # frames counter (pygame frames, not related to simulation steps)
         self.step = 0  # step in simulation
@@ -31,6 +32,8 @@ class Game:
         self.__button_start_stop: Button = None
 
         # run the game
+        self.__load_sprites()
+        self.__prepare_texture()
         self.__init_ui()
         self.__main_loop()
 
@@ -136,8 +139,45 @@ class Game:
         screen_size = self.WINDOW_SIZE
         cells_x = self.camera.width
         cells_y = math.ceil(cells_x / screen_size[0] * screen_size[1])
-
         cells_size = math.ceil(screen_size[0] / cells_y)
+        if self.camera.width < 50:
+            self.__render_unit_close(grid, cells_x, cells_y, cells_size)
+        else:
+            self.__render_unit_far_away(grid, cells_x, cells_y, cells_size)
+
+        # unit on mouse hover info
+        mouse_over_ui = False
+        for button in self.buttons:
+            if button.rect().collidepoint(pygame.mouse.get_pos()):
+                mouse_over_ui = True
+                break
+        if not mouse_over_ui:
+            click_x, click_y = self.camera.screen_to_grid_point(*pygame.mouse.get_pos(), cells_size)
+            if grid[click_x][click_y] != 0:
+                self.__draw_unit_info(self.grid.get_description(click_x, click_y))
+
+    def __render_unit_close(self, grid: [[int]], cells_x: int, cells_y: int, cells_size: int):
+        for row in range(cells_x):
+            for column in range(cells_y):
+                color = pygame.Color("white")
+                # ignore empty
+                if grid[row + self.camera.x][column + self.camera.y] == 0:
+                    continue
+                # camera should take care of not showing any tiles outside a grid,
+                # but it needs to have max_width the same as grid cell_count
+                # if row + self.camera.x < len(grid[0]) and column + self.camera.y < len(grid):
+
+                if grid[row + self.camera.x][column + self.camera.y] == 2:
+                    self.screen.blit(self.axe[self.camera.size], (cells_size * row, cells_size * column))
+                    continue
+
+                elif grid[row + self.camera.x][column + self.camera.y] == 3:
+                    self.screen.blit(self.spear[self.camera.size], (cells_size * row, cells_size * column))
+                    continue
+
+
+
+    def __render_unit_far_away(self, grid: [[int]], cells_x: int, cells_y: int, cells_size: int):
         for row in range(cells_x):
             for column in range(cells_y):
                 color = pygame.Color("white")
@@ -167,16 +207,47 @@ class Game:
                                   cells_size,
                                   cells_size])
 
-                # unit on mouse hover info
-                mouse_over_ui = False
-                for button in self.buttons:
-                    if button.rect().collidepoint(pygame.mouse.get_pos()):
-                        mouse_over_ui = True
-                        break
-                if not mouse_over_ui:
-                    click_x, click_y = self.camera.screen_to_grid_point(*pygame.mouse.get_pos(), cells_size)
-                    if grid[click_x][click_y] != 0:
-                        self.__draw_unit_info(self.grid.get_description(click_x, click_y))
+    def __load_sprites(self):
+        sheet = pygame.image.load("src/Visualization/Sprites/soldiers.png").convert()
+        axe = sheet.subsurface(pygame.Rect(0, 0, 80, 80)).copy()
+        spear = sheet.subsurface(pygame.Rect(80*3, 0, 80, 80)).copy()
+        self.axe = [pygame.transform.scale(axe, (self.WINDOW_SIZE[0] / size, self.WINDOW_SIZE[1] / size)) for size in self.camera.allowed_width]
+
+        for axe in self.axe:
+            axe.set_colorkey((255, 255, 255))
+
+        self.spear = [pygame.transform.scale(spear, (self.WINDOW_SIZE[0] / size, self.WINDOW_SIZE[1] / size)) for size in self.camera.allowed_width]
+        for spear in self.spear:
+            spear.set_colorkey((255, 255, 255))
+
+
+
+
+    def __prepare_texture(self):
+        self.terrain_texture = pygame.Surface((400*32, 400*32))  # TODO: make it dynamic (size)
+        self.terrain_texture.fill((123, 178, 0))
+        tree = pygame.image.load("src/Visualization/Sprites/tree.png").convert()
+        tree.set_colorkey((255, 255, 255))
+        mountains = pygame.image.load("src/Visualization/Sprites/mountains.png").convert()
+        river = pygame.image.load("src/Visualization/Sprites/river.png").convert()
+        dark_grass = pygame.image.load("src/Visualization/Sprites/dark_grass.png").convert()
+
+        terrain = self.terrain.get_grid()
+        for i, row in enumerate(terrain):
+            for j, elem in enumerate(row):
+                if elem == 3:  # mountains
+                    self.terrain_texture.blit(mountains, (i*32, j*32))
+                elif elem == 10:  # river
+                    self.terrain_texture.blit(river, (i*32, j*32))
+                else:  # grass and default
+                    self.terrain_texture.blit(tree, (i*32, j*32))
+                    # if water is nearby, draw dark grass
+                    if 0 < i < len(terrain) - 1 and 0 < j < len(terrain[0]) - 1:
+                        if terrain[i-1][j] == 10 or terrain[i+1][j] == 10 or terrain[i][j-1] == 10 or terrain[i][j+1] == 10:
+                            self.terrain_texture.blit(dark_grass, (i*32, j*32))
+
+
+
 
     def __render_terrain(self):
         screen_size = self.WINDOW_SIZE
@@ -185,17 +256,24 @@ class Game:
 
         cells_size = math.ceil(screen_size[0] / cells_y)
 
-        grid = self.terrain.get_grid()
-        colors_dict = {1: Color(0, 200, 0), 3: Color(100, 100, 100), 10: Color(0, 0, 255)}
-        for row in range(cells_x):
-            for column in range(cells_y):
-                color = colors_dict.get(grid[row + self.camera.x][column + self.camera.y], (0, 0, 0))  # default color is black
-                pygame.draw.rect(self.screen,
-                                 color,
-                                 [cells_size * row,
-                                  cells_size * column,
-                                  cells_size,
-                                  cells_size])
+        # grid = self.terrain.get_grid()
+        # colors_dict = self.terrain.get_colors()
+        # for row in range(cells_x):
+        #     for column in range(cells_y):
+        #         color = colors_dict.get(grid[row + self.camera.x][column + self.camera.y], (0, 0, 0))  # default color is black
+        #         pygame.draw.rect(self.screen,
+        #                          color,
+        #                          [cells_size * row,
+        #                           cells_size * column,
+        #                           cells_size,
+        #                           cells_size])
+
+        terr_copy = self.terrain_texture.subsurface((self.camera.x * 32, self.camera.y * 32, cells_x*32, cells_y*32))
+        scaled_x = cells_size * cells_x
+        scaled_y = cells_size * cells_y
+        terr_copy = pygame.transform.scale(terr_copy, (scaled_x, scaled_y))
+
+        self.screen.blit(terr_copy, (0, 0))
 
 
     def __render_ui(self):
@@ -205,15 +283,14 @@ class Game:
     def __main_loop(self):
         while True:
             grid = self.grid.get_grid()
-
             # input
             self.__input_handler()
 
-            # render grid
             self.screen.fill(pygame.Color(200, 200, 200))
-            self.__render_terrain()  # TODO: optimize, rendering the same terrain every time is a waste
+            # render terrain
+            self.__render_terrain()
+            # render grid
             self.__render_grid(grid)
-
             # render UI
             self.__render_ui()
 
