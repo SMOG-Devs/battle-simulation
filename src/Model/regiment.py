@@ -58,22 +58,7 @@ class Regiment:
     def units_count(self) -> int:
         return len(self.units)
 
-    def move(self, reversed_positions:  Dict[Tuple[int, int], List[ap.Agent]]):
-
-        def direction_to(regiment: Regiment) -> (float, float):
-            # TODO: make if faster
-
-            x = regiment.__centroid_of_regiment()[0] - self.__centroid_of_regiment()[0]
-            y = regiment.__centroid_of_regiment()[1] - self.__centroid_of_regiment()[1]
-            dis = np.linalg.norm((x, y))
-            # if regiments are on top of each other, return default
-            if dis < 1:
-                return 0, 0
-            x = x / dis
-            y = y / dis
-            x = round(x)
-            y = round(y)
-            return x, y
+    def take_action(self):
 
         target: ((int, int), Regiment) = self.__closest_regiment()  # Remember: it contains ((int, int), Regiment)
         if target is None:
@@ -82,12 +67,7 @@ class Regiment:
             return  # This shouldn't happen, where there is no enemy, battle is won
 
         # direction = direction_to(target[1]) we don't pass direction, we pass enemy and self centroid tuples instead
-        self.units.move(target[0], self.__centroid_of_regiment())
-
-    def attack(self):
-        #  in future it may require target Regiment
-        for unit in self.units:
-            unit.attack(None)
+        self.units.take_action(target[1], target[0], self.__centroid_of_regiment())
 
     def remove_dead(self):
         # Regiment.battlefield.remove_agents(self.units.select(self.units.health <= 0)) # doesn't work, idk why

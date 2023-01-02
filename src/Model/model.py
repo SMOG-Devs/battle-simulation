@@ -51,10 +51,7 @@ class BattleModel(ap.Model):
                 # all dead units are removed with .remove_dead() functions and empty
                 # regiments are also removed...........
                 # but it doesnt work without this 'if'
-                reg.move(reversed_positions)
-
-        for reg in self.regiments:
-            reg.attack()
+                reg.take_action()
 
         for reg in self.regiments:
             reg.remove_dead()

@@ -58,17 +58,11 @@ class Unit(ap.Agent):
         self.battle_front = battle_front
         self.pos = self.battle_front.grid.positions[self]
 
-    def move(self, enemy_position: Tuple[int, int], regiment_position: Tuple[int, int]):
+    def take_action(self, enemy_regiment, enemy_position: Tuple[int, int], regiment_position: Tuple[int, int]):
         """
         Move regiment towards enemy regiment
         :argument enemy_position: (int, int) target regiment
+        :argument enemy_regiment: (Regiment) enemy regiment
         :argument regiment_position: (int, int) own regiment
         """
         print("move have no override")
-
-    def attack(self, enemy_regiment):
-        """
-        Attack selected regiment :argument enemy_regiment: Regiment - it is optional, e.x: melee units don't need a
-        target, they will just attack nearby enemy
-        """
-        print("attack have no override")

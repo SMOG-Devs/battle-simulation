@@ -7,6 +7,7 @@ import random
 from src.Agent.unit import Unit
 from src.Agent.unit import Orders
 from src.Agent.unit import Status
+import random
 
 
 class Soldier(ap.Agent):
@@ -134,7 +135,7 @@ class Infantry(Unit):
         self.status = Status.Fighting
         self.range = 1
 
-    def attack(self, enemy_regiment):
+    def __attack(self, enemy_regiment):
         def inside_of_grid(troop: Infantry):
             return 0 < self.battle_front.grid.positions[troop][0] < self.battle_front.grid.shape[0] and \
                 0 < self.battle_front.grid.positions[troop][1] < self.battle_front.grid.shape[0]
@@ -163,18 +164,72 @@ class Infantry(Unit):
 
     #########################
 
-    def move(self, enemy_position: Tuple[int, int], regiment_position: Tuple[int, int]):
+    def take_action(self, enemy_regiment, enemy_position: Tuple[int, int], regiment_position: Tuple[int, int]):
         match self.regiment_order:
             case Orders.MoveAndAttack:
+                self.__attack(enemy_regiment)
                 self.__calculatePath(enemy_position)
-                start = (len(self.path) > self.speed) * self.speed + (len(self.path) <= self.speed) * (len(self.path) - 1)
-                for i in range(start,-1,-1):
+                start = (len(self.path) > self.speed) * self.speed + (len(self.path) <= self.speed) * (
+                            len(self.path) - 1)
+                for i in range(start, -1, -1):
                     if self.path[i] in self.battle_front.grid.empty:
-                        vector = (self.path[i][0] - self.pos[0],self.path[i][1] - self.pos[1])
+                        vector = (self.path[i][0] - self.pos[0], self.path[i][1] - self.pos[1])
                         self.battle_front.grid.move_by(self, vector)
                         break
                 self.pos = self.battle_front.grid.positions[self]
 
     def __calculatePath(self, enemy_position: Tuple[int, int]):
-        self.path = self.battle_front.shortest_path(self.pos,enemy_position)
+        self.path = self.battle_front.shortest_path(self.pos, enemy_position)
+
+
+class HorseArcher(Unit):
+    def __init__(self, model, *args, **kwargs):
+        super().__init__(model, *args, **kwargs)
+        self.speed: int
+        self.accuracy: int
+        self.last_target: Unit
+        self.damage: int
+
+    def setup(self, **kwargs):  # remember: attributes are inherited from Unit superclass
+        self.speed = 6
+        self.regiment_order = Orders.MoveAndAttack
+        # self.tema has to be set outside, by regiment
+        self.health = 90
+        self.damage = 10  # Somehow that doesn't work, it takes damage value  from superclass...
+        self.status = Status.Fighting
+        self.range = 80
+        self.accuracy = 0.65
+
+    def __attack(self, enemy_regiment):
+        def inside_of_grid(troop: Unit):
+            return 0 < self.battle_front.grid.positions[troop][0] < self.battle_front.grid.shape[0] and \
+                0 < self.battle_front.grid.positions[troop][1] < self.battle_front.grid.shape[0]
+
+        if not inside_of_grid(self):
+            return
+
+        for neighbor in self.battle_front.grid.neighbors(self, distance=self.range).to_list():
+            if neighbor.team != self.team:
+                self.last_target = neighbor
+                # attack the first found neighbour from opposite team
+                # break to not attack all neighbours but only the first one
+                neighbor.health -= (random.random < self.accuracy) * self.damage
+                # if soldier killed enemy
+                if neighbor.health <= 0:
+                    neighbor.status = Status.Dead
+                break
+
+    def take_action(self, enemy_regiment, enemy_position: Tuple[int, int], regiment_position: Tuple[int, int]):
+        match self.regiment_order:
+            case Orders.MoveAndAttack:
+                self.__attack(enemy_regiment)
+                self.__calculatePath(enemy_position)
+                start = (len(self.path) > self.speed) * self.speed + (len(self.path) <= self.speed) * (
+                            len(self.path) - 1)
+                for i in range(start, -1, -1):
+                    if self.path[i] in self.battle_front.grid.empty:
+                        vector = (self.path[i][0] - self.pos[0], self.path[i][1] - self.pos[1])
+                        self.battle_front.grid.move_by(self, vector)
+                        break
+                self.pos = self.battle_front.grid.positions[self]
 
