@@ -8,8 +8,8 @@ from dataclasses import dataclass, field
 from typing import Tuple, List
 from itertools import product
 
-class World:
 
+class World:
     grid: ap.Grid
     terrain: Terrain
 
@@ -78,25 +78,29 @@ class World:
                     neighbours.append((new_x, new_y))
         return neighbours
 
-    def __calculate_search_neighbourghood(self, start: Tuple[int,int], foot_range: int) -> List[np.ndarray]:
+    def __calculate_search_neighbourghood(self, start: Tuple[int, int], foot_range: int) -> List[np.ndarray]:
         upper_limit_x = self.grid.shape[0] - foot_range - 1
         upper_limit_y = self.grid.shape[1] - foot_range - 1
         x_min = (foot_range < start[0]) * (start[0] - foot_range)
         x_max = (start[0] > upper_limit_x) * (self.grid.shape[0] - 1) + (
-                    start[0] <= upper_limit_x) * (start[0] + foot_range)
+                start[0] <= upper_limit_x) * (start[0] + foot_range)
         y_min = (foot_range < start[1]) * (start[1] - foot_range)
         y_max = (start[1] > upper_limit_y) * (self.grid.shape[1] - 1) + (
-                    start[1] <= upper_limit_y) * (start[1] + foot_range)
+                start[1] <= upper_limit_y) * (start[1] + foot_range)
 
         neighbourhood_list = [np.arange(x_min, x_max + 1), np.arange(y_min, y_max + 1)]
 
         return neighbourhood_list
 
-    def __project_end(self, start: Tuple[int,int], end: Tuple[int,int], search_area: List[np.ndarray]) -> Tuple[int,int]:
+    def __project_end(self, start: Tuple[int, int], end: Tuple[int, int], search_area: List[np.ndarray]) -> Tuple[
+        int, int]:
         if end[0] in search_area[0] and end[1] in search_area[1]:
             return end
 
-        corner = np.array(max(search_area[0]), max(search_area[1]))
+        corner_x = search_area[0][[0, -1]]
+        corner_y = search_area[1][[0, -1]]
+
+        corner = np.array([np.min(np.abs(corner_x - start[0])), np.min(np.abs(corner_y - start[1]))])
         np_start = np.array(start)
         np_stop = np.array(end)
 
@@ -104,6 +108,7 @@ class World:
         dist = np.linalg.norm(dist_vector)
         direction_vector = dist_vector / dist
 
-        multiplier = np.min(abs((corner-start)/(direction_vector + 1e-10)))
+        diff = np.abs(corner / (direction_vector + 1e-10))
+        multiplier = np.min(diff)
 
         return tuple(np.round(start + direction_vector * multiplier))

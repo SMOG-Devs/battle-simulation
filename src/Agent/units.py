@@ -1,13 +1,17 @@
 from enum import Enum
 from math import sqrt
-from typing import Tuple, Dict, List
+from typing import Tuple, Dict, List, Optional
 
 import agentpy as ap
 import random
+
+import numpy as np
+
 from src.Agent.unit import Unit
 from src.Agent.unit import Orders
 from src.Agent.unit import Status
 import random
+from .stats import HorseArcherStats, Stats
 
 
 class Soldier(ap.Agent):
@@ -131,8 +135,8 @@ class Infantry(Unit):
         self.regiment_order = Orders.MoveAndAttack
         # self.tema has to be set outside, by regiment
         self.health = 100
-        self.damage = 0  # Somehow that doesn't work, it takes damage value  from superclass...
-        self.status = Status.Fighting
+        self.damage = 5  # Somehow that doesn't work, it takes damage value  from superclass...
+        self.status = Status.Fighting.value
         self.range = 1
 
     def __attack(self, enemy_regiment):
@@ -143,15 +147,12 @@ class Infantry(Unit):
         if not inside_of_grid(self):
             return
 
-        for neighbor in self.battle_front.grid.neighbors(self, distance=self.range).to_list():
-            if neighbor.team != self.team:
-                # attack the first found neighbour from opposite team
-                # break to not attack all neighbours but only the first one
-                neighbor.health -= self.damage
-                # if soldier killed enemy
-                if neighbor.health <= 0:
-                    neighbor.status = Status.Dead
-                break
+        # attack the first found neighbour from opposite team
+        # break to not attack all neighbours but only the first one
+        self.last_target.health -= self.damage
+        # if soldier killed enemy
+        if self.last_target.health <= 0:
+            self.last_target.status = Status.Dead
 
     # TODO: One soldiers shouldn't be on top of another
     # def move(self, x_axis: int, y_axis: int):
@@ -167,10 +168,11 @@ class Infantry(Unit):
     def take_action(self, enemy_regiment, enemy_position: Tuple[int, int], regiment_position: Tuple[int, int]):
         match self.regiment_order:
             case Orders.MoveAndAttack:
-                self.__attack(enemy_regiment)
+                if self.last_target is not None:
+                    self.__attack(enemy_regiment)
                 self.__calculatePath(enemy_position)
                 start = (len(self.path) > self.speed) * self.speed + (len(self.path) <= self.speed) * (
-                            len(self.path) - 1)
+                        len(self.path) - 1)
                 for i in range(start, -1, -1):
                     if self.path[i] in self.battle_front.grid.empty:
                         vector = (self.path[i][0] - self.pos[0], self.path[i][1] - self.pos[1])
@@ -183,12 +185,13 @@ class Infantry(Unit):
 
 
 class HorseArcher(Unit):
+    last_target: Optional[Unit]
+    accuracy: float
+    damage: int
+    speed: int
+
     def __init__(self, model, *args, **kwargs):
         super().__init__(model, *args, **kwargs)
-        self.speed: int
-        self.accuracy: int
-        self.last_target: Unit
-        self.damage: int
 
     def setup(self, **kwargs):  # remember: attributes are inherited from Unit superclass
         self.speed = 6
@@ -196,9 +199,10 @@ class HorseArcher(Unit):
         # self.tema has to be set outside, by regiment
         self.health = 90
         self.damage = 10  # Somehow that doesn't work, it takes damage value  from superclass...
-        self.status = Status.Fighting
+        self.status = Status.Fighting.value
         self.range = 80
         self.accuracy = 0.65
+        self.last_target = None
 
     def __attack(self, enemy_regiment):
         def inside_of_grid(troop: Unit):
@@ -208,28 +212,60 @@ class HorseArcher(Unit):
         if not inside_of_grid(self):
             return
 
+        # attack the first found neighbour from opposite team
+        # break to not attack all neighbours but only the first one
+        self.last_target.health -= (random.random() < self.accuracy) * self.damage
+        # if soldier killed enemy
+        if self.last_target.health <= 0:
+            self.last_target.status = Status.Dead
+
+    def evaluate_situation(self) -> Stats:
+        return HorseArcherStats(self.last_target is not None)
+
+    def find_target(self, enemy_regiment):
+        found = False
         for neighbor in self.battle_front.grid.neighbors(self, distance=self.range).to_list():
-            if neighbor.team != self.team:
+            if neighbor.team != self.team and neighbor in enemy_regiment.units:
                 self.last_target = neighbor
-                # attack the first found neighbour from opposite team
-                # break to not attack all neighbours but only the first one
-                neighbor.health -= (random.random < self.accuracy) * self.damage
-                # if soldier killed enemy
-                if neighbor.health <= 0:
-                    neighbor.status = Status.Dead
+                found = True
                 break
+        if not found:
+            self.last_target = None
+
+    def __calculate_distance_to_target(self) -> float:
+        if self.last_target is None:
+            return float('inf')
+        x_diff = self.pos[0] - self.last_target.pos[0]
+        y_diff = self.pos[1] - self.last_target.pos[1]
+        return np.linalg.norm([x_diff, y_diff])
 
     def take_action(self, enemy_regiment, enemy_position: Tuple[int, int], regiment_position: Tuple[int, int]):
         match self.regiment_order:
             case Orders.MoveAndAttack:
-                self.__attack(enemy_regiment)
+                if self.last_target is None:
+                    self.__calculatePath(enemy_position)
+                else:
+                    self.__attack(enemy_regiment)
+                    if self.__calculate_distance_to_target() < self.last_target.range:
+                        self.__calculatePath(self.__reverse_position())  # odwracamy współrzedne
+                    else:
+                        self.__calculatePath(self.last_target.pos)
+            case Orders.Move:
                 self.__calculatePath(enemy_position)
-                start = (len(self.path) > self.speed) * self.speed + (len(self.path) <= self.speed) * (
-                            len(self.path) - 1)
-                for i in range(start, -1, -1):
-                    if self.path[i] in self.battle_front.grid.empty:
-                        vector = (self.path[i][0] - self.pos[0], self.path[i][1] - self.pos[1])
-                        self.battle_front.grid.move_by(self, vector)
-                        break
-                self.pos = self.battle_front.grid.positions[self]
+        start = (len(self.path) > self.speed) * self.speed + (len(self.path) <= self.speed) * (
+                len(self.path) - 1)
+        for i in range(start, -1, -1):
+            if self.path[i] in self.battle_front.grid.empty:
+                vector = (self.path[i][0] - self.pos[0], self.path[i][1] - self.pos[1])
+                self.battle_front.grid.move_by(self, vector)
+                break
+        self.pos = self.battle_front.grid.positions[self]
 
+    def __calculatePath(self, enemy_position: Tuple[int, int]):
+        self.path = self.battle_front.shortest_path(self.pos, enemy_position)
+
+    def __reverse_position(self) -> Tuple[int, int]:
+        x_diff = self.last_target.pos[0] - self.pos[0]
+        y_diff = self.last_target.pos[1] - self.pos[1]
+
+        return int(np.clip(self.pos[0] - x_diff, 0, 400)), int(np.clip(self.pos[1] - y_diff, 0, 400))
