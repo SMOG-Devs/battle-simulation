@@ -9,3 +9,8 @@ class Stats(ABC):
 @dataclass
 class HorseArcherStats(Stats):
     targetInRange: bool
+
+@dataclass
+class ReiterStats(Stats):
+    targetInRange: bool
+    readyToFire: bool

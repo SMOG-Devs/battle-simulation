@@ -269,3 +269,52 @@ class HorseArcher(Unit):
         y_diff = self.last_target.pos[1] - self.pos[1]
 
         return int(np.clip(self.pos[0] - x_diff, 0, 400)), int(np.clip(self.pos[1] - y_diff, 0, 400))
+
+class Reiter(Unit):
+    last_target: Optional[Unit]
+    accuracy: float
+    row_number: int
+    def __init__(self, model, *args, **kwargs):
+        super().__init__(model, *args, **kwargs)
+    def setup(self, **kwargs):  # remember: attributes are inherited from Unit superclass
+        self.speed = 6
+        self.regiment_order = Orders.Move
+        self.health = 90
+        self.damage = 10
+        self.status = Status.Fighting.value
+        self.range = 80
+        self.accuracy = 0.65
+        self.last_target = None
+
+    def move_whole(self, ):
+
+    def take_action(self, enemy_regiment, enemy_position: Tuple[int, int], regiment_position: Tuple[int, int]):
+        # match self.regiment_order:
+        #     case Orders.MoveAndAttack:
+        #         if self.last_target is None:
+        #             self.__calculatePath(enemy_position)
+        #         else:
+        #             self.__attack(enemy_regiment)
+        #             if self.__calculate_distance_to_target() < self.last_target.range:
+        #                 self.__calculatePath(self.__reverse_position())  # odwracamy współrzedne
+        #             else:
+        #                 self.__calculatePath(self.last_target.pos)
+        #     case Orders.Move:
+        #         self.__calculatePath(enemy_position)
+        # start = (len(self.path) > self.speed) * self.speed + (len(self.path) <= self.speed) * (
+        #         len(self.path) - 1)
+        # for i in range(start, -1, -1):
+        #     if self.path[i] in self.battle_front.grid.empty:
+        #         vector = (self.path[i][0] - self.pos[0], self.path[i][1] - self.pos[1])
+        #         self.battle_front.grid.move_by(self, vector)
+        #         break
+        # self.pos = self.battle_front.grid.positions[self]
+        match self.regiment_order:
+            case Orders.Move:
+                self.pos
+
+
+
+
+
+

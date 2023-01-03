@@ -18,3 +18,6 @@ def generate_order_horse_archers(units: ap.AgentList) -> Orders:
     if ATTACK_THRESHOLD > sum_of_in_range / len(stats):
         return Orders.Move
     return Orders.MoveAndAttack
+
+def generate_order_reiters(units: ap.AgentList) -> Orders:
+    pass

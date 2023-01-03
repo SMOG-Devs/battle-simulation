@@ -58,14 +58,34 @@ class Regiment:
         self.units.team = team
         self.team = team
         self.type = agent_type
+        match agent_type:
+            case u.Reiter:
+                self.__establish_rows()
+
+    def __establish_rows(self):
+        curr_y = 0
+        row_number = 0
+        for unit in self.units:
+            if curr_y != unit.pos[1]:
+                curr_y = unit.pos[1]
+                row_number += 1
+            unit.row_number = row_number
 
     def units_count(self) -> int:
         return len(self.units)
 
     def __establish_order(self):
         match self.type:
-            case u.HorseArcher | u.HorseArcher:
+            case u.HorseArcher:
                 self.units.regiment_order = general.generate_order_horse_archers(self.units)
+            case u.Reiter:
+                row_number = 1
+                units = self.units.select(self.units.row_number == row_number)
+                while len(units) != 0:
+                    units.regiment_order = general.generate_order_reiters(units)
+                    row_number += 1
+                    units = self.units.select(self.units.row_nuber == row_number)
+
 
     def take_action(self):
 
@@ -76,9 +96,19 @@ class Regiment:
             return  # This shouldn't happen, where there is no enemy, battle is won
 
         # direction = direction_to(target[1]) we don't pass direction, we pass enemy and self centroid tuples instead
-        self.units.find_target(target[1])
-        self.__establish_order()
-        self.units.take_action(target[1], target[0], self.__centroid_of_regiment())
+        match self.type:
+            case u.Reiter:
+                reiter_path = self.battlefield.shortest_path(self.__centroid_of_regiment(), target[1])
+                reiter_speed = (len(reiter_path) > self.units[0].speed) * self.units[0].speed
+                new_pos = reiter_path[reiter_speed]
+                self.__establish_order()
+                units.take_action(target[1], target[0], new_pos)
+
+
+            case _:
+                self.units.find_target(target[1])
+                self.__establish_order()
+                self.units.take_action(target[1], target[0], self.__centroid_of_regiment())
 
     def remove_dead(self):
         # Regiment.battlefield.remove_agents(self.units.select(self.units.health <= 0)) # doesn't work, idk why
