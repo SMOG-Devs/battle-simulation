@@ -4,6 +4,7 @@ from typing import Tuple, Dict, List, Optional
 
 import agentpy as ap
 import random
+import math
 
 import numpy as np
 
@@ -356,6 +357,7 @@ class Cannon(Unit):
         self.path = self.battle_front.shortest_path(self.pos, enemy_position)
 
 class Hussar(Unit):
+    stopped: bool
     turning_time: int
     turning_counter: int
     accuracy_by_speed: float
@@ -379,6 +381,7 @@ class Hussar(Unit):
         self.turning_time = 3
         # increase every step, when it reaches turning_time, attack and reset
         self.turning_counter = 0
+        self.stopped = False
 
     def __attack(self, enemy_regiment):
         def inside_of_grid(troop: Unit):
@@ -405,15 +408,16 @@ class Hussar(Unit):
             case Orders.MoveAndAttack:
                 if self.last_target is not None:
                     self.__attack(enemy_regiment)
-                self.__calculatePath(enemy_position)
+                    self.stopped = True
+                
+                # When hussar gett stopped, 
+                if self.last_target is not None and self.stopped:
+                    self.__fallBack(enemy_position)
+                else:
+                    self.__calculatePath(enemy_position)
+
                 start = (len(self.path) > self.speed) * self.speed + (len(self.path) <= self.speed) * (
                         len(self.path) - 1)
-                # if hussr has enemy in range, it will stop moving and attack locally with reduced accuracy
-                if self.last_target is not None:
-                    self.accuracy_by_speed = 0.1
-                    return
-                else:
-                    self.accuracy_by_speed = 0.25
 
                 for i in range(start, -1, -1):
                     if self.path[i] in self.battle_front.grid.empty:
@@ -424,3 +428,6 @@ class Hussar(Unit):
 
     def __calculatePath(self, enemy_position: Tuple[int, int]):
         self.path = self.battle_front.shortest_path(self.pos, enemy_position)
+
+    def __fallBack(self, enemy_position: Tuple[int, int]):
+        self.path = self.battle_front.shortest_path(self.pos, [i+math.floor(random.random()*5) for i in enemy_position])
