@@ -20,6 +20,7 @@ class BattleModel(ap.Model):
         self.logs: [[(type, Team, int, int, (int,
                                              int))]] = []  # list of frames, each frame have list of tuples: type, team, status, health, (positionX, positionY)
         # model manages regiments, regiments manages units
+        self.stats = {}
 
     def setup(self):
         """ Initiate a list of new agents. """
@@ -27,6 +28,17 @@ class BattleModel(ap.Model):
         Regiment.setup(self, self.battle_field)
         for key, values in self.p['army_dist'].items():
             self._setup_army(key, values['quantity'], values['position'])
+
+        # stats before the battle
+        red_count = 0
+        blue_count = 0
+        for agent in self.battle_field.grid.agents:
+            if agent.team == Team.RED:
+                red_count += 1
+            else:
+                blue_count += 1
+        self.stats["before battle red"] = red_count
+        self.stats["before battle blue"] = blue_count
 
     def _setup_army(self, agent_type: Agent_type, quantities: List[int], positions: List[Tuple[int, int]]):
         self.army[agent_type] = []
@@ -85,7 +97,26 @@ class BattleModel(ap.Model):
 
     def end(self):
         """ Report an evaluation measure. """
+
+        # stats after the battle
+        red_count = 0
+        blue_count = 0
+        for agent in self.battle_field.grid.agents:
+            if agent.team == Team.RED:
+                red_count += 1
+            else:
+                blue_count += 1
+        self.stats["after battle red"] = red_count
+        self.stats["after battle blue"] = blue_count
+        self.stats["won"] = "red" if red_count > blue_count else "blue"
+        self.stats["red died"] = self.stats["before battle red"] - red_count
+        self.stats["blue died"] = self.stats["before battle blue"] - blue_count
+        self.stats["red died historically"] = 100
+        self.stats["blue died historically"] = 2000
+
         self.save_logs_as_pickle(self.logs_filename)
+
+        print(self.stats)
 
     def return_soldiers_colors(self):
         colors = {1: 'b', 2: 'r', 3: 'black'}
@@ -121,3 +152,10 @@ class BattleModel(ap.Model):
     def save_logs_as_pickle(self, filename):
         with open(filename, 'wb') as file:
             pickle.dump(self.logs, file)
+
+        stats = ""
+        for key, val in self.stats.items():
+            stats += key + ": " + str(val) + "\n"
+
+        with open(filename + ".txt", 'w') as file:
+            file.write(stats)
