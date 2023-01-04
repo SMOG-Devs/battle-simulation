@@ -20,4 +20,4 @@ def generate_order_horse_archers(units: ap.AgentList) -> Orders:
     return Orders.MoveAndAttack
 
 def generate_order_reiters(units: ap.AgentList) -> Orders:
-    pass
+    return Orders.Move

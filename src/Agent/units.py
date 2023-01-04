@@ -286,9 +286,7 @@ class Reiter(Unit):
         self.accuracy = 0.65
         self.last_target = None
 
-    def move_whole(self, ):
-
-    def take_action(self, enemy_regiment, enemy_position: Tuple[int, int], regiment_position: Tuple[int, int]):
+    def take_action(self, enemy_regiment, enemy_position: Tuple[int, int], regiment_center: Tuple[int,int], vector: Tuple[int, int] = (0,0), angle = 0.25*np.pi):
         # match self.regiment_order:
         #     case Orders.MoveAndAttack:
         #         if self.last_target is None:
@@ -309,10 +307,28 @@ class Reiter(Unit):
         #         self.battle_front.grid.move_by(self, vector)
         #         break
         # self.pos = self.battle_front.grid.positions[self]
+        centre_vector = (self.pos[0] - regiment_center[0], self.pos[1] - regiment_center[1])
+        new_vector = np.round(self.__spin_point(centre_vector, angle))
+        new_pos = (-centre_vector[0] + new_vector[0] + vector[1], -centre_vector[1] + vector[1] + new_vector[1])
+        #print(vector, centre_vector, new_vector, self.pos, regiment_center)
         match self.regiment_order:
             case Orders.Move:
-                self.pos
+                self.battle_front.grid.move_by(self,new_pos)
+                self.pos = (self.pos[0] + new_pos[0], self.pos[1] + new_pos[1])
 
+    def check_availability(self, vector, regiment_center, position_set, spin=.25*np.pi):
+        centre_vector = (self.pos[0] - regiment_center[0], self.pos[1] - regiment_center[1])
+        new_vector = self.__spin_point(centre_vector,spin)
+        new_pos = (-centre_vector[0] + vector[0] + new_vector[0] + self.pos[0], -centre_vector[1] + vector[1] + new_vector[1]+self.pos[1])
+        #print(f'new_pos{new_pos}, self.pos{self.pos}, new_vector{new_vector}, centre_vector{centre_vector}, vector{vector}')
+        if not (0 <= new_pos[0] < 400 and 0 <= new_pos[1] < 400 and (new_pos in self.battle_front.grid.empty or new_pos in position_set)):
+            raise Exception
+
+    def __spin_point(self,point, angle):
+        x = point[0]*np.cos(angle) - point[1]*np.sin(angle)
+        y = point[0]*np.cos(angle) + point[1]*np.sin(angle)
+
+        return round(x),round(y)
 
 
 

@@ -17,6 +17,7 @@ class Regiment:
     model: ap.Model = None
     battlefield: World = None
     type: Agent_type
+    positions = set()
 
     @staticmethod  # call it first before creating any object Regiment
     def setup(model: ap.Model, grid: World):
@@ -51,8 +52,8 @@ class Regiment:
 
     def __init__(self, quantity: int, agent_type: Agent_type, team: Team, position: (int, int)):
         self.units = ap.AgentList(Regiment.model, quantity, agent_type)
-        positions_for_soldiers = Regiment._generate_positions(quantity, position)
-        Regiment.battlefield.grid.add_agents(self.units, positions=positions_for_soldiers)
+        self.positions = Regiment._generate_positions(quantity, position)
+        Regiment.battlefield.grid.add_agents(self.units, positions=self.positions)
         Regiment._add_regiment(self)
         self.units.setup_map_binding(self.battlefield)
         self.units.team = team
@@ -84,7 +85,7 @@ class Regiment:
                 while len(units) != 0:
                     units.regiment_order = general.generate_order_reiters(units)
                     row_number += 1
-                    units = self.units.select(self.units.row_nuber == row_number)
+                    units = self.units.select(self.units.row_number == row_number)
 
 
     def take_action(self):
@@ -94,15 +95,28 @@ class Regiment:
             return
         if len(target[1].units) <= 0:
             return  # This shouldn't happen, where there is no enemy, battle is won
-
         # direction = direction_to(target[1]) we don't pass direction, we pass enemy and self centroid tuples instead
+        position = self.__centroid_of_regiment()
         match self.type:
             case u.Reiter:
-                reiter_path = self.battlefield.shortest_path(self.__centroid_of_regiment(), target[1])
+                reiter_path = self.battlefield.shortest_path(self.__centroid_of_regiment(), target[0])
                 reiter_speed = (len(reiter_path) > self.units[0].speed) * self.units[0].speed
-                new_pos = reiter_path[reiter_speed]
                 self.__establish_order()
-                units.take_action(target[1], target[0], new_pos)
+                print(f'-------------{reiter_speed}')
+                while True and reiter_speed >= 0:
+                    new_pos = reiter_path[reiter_speed]
+                    move = (new_pos[0] - position[0], new_pos[1] - position[1])
+                    print('tired')
+                    try:
+                        self.units.check_availability(move, self.__centroid_of_regiment(), self.positions)
+                        self.units.take_action(target[1], target[0], self.__centroid_of_regiment(), move)
+                        self.positions = set(self.units.pos)
+                        break
+                    except Exception:
+                        reiter_speed -= 1
+                print(f'------------{reiter_speed}')
+
+
 
 
             case _:
