@@ -207,7 +207,7 @@ class HorseArcher(Unit):
     def __attack(self, enemy_regiment):
         def inside_of_grid(troop: Unit):
             return 0 < self.battle_front.grid.positions[troop][0] < self.battle_front.grid.shape[0] and \
-                0 < self.battle_front.grid.positions[troop][1] < self.battle_front.grid.shape[0]
+                   0 < self.battle_front.grid.positions[troop][1] < self.battle_front.grid.shape[0]
 
         if not inside_of_grid(self):
             return
@@ -275,11 +275,12 @@ class Cannon(Unit):
     reload_time: int
     reload_counter: int
     shot_radius: int
+    dispersion: int
+    logging: bool
 
     def __init__(self, model, *args, **kwargs):
         super().__init__(model, *args, **kwargs)
 
-    # TODO: model parameters might need to be improved
     def setup(self, **kwargs):  # remember: attributes are inherited from Unit superclass
         self.speed = 1
         self.regiment_order = Orders.MoveAndAttack
@@ -293,11 +294,14 @@ class Cannon(Unit):
         self.reload_time = 7
         # increase every step, when it reaches reload_time, attack and reset
         self.reload_counter = 0
+        self.dispersion = 3
+        # log info about shot points and enemies within damage radius
+        self.logging = True
 
     def __attack(self, enemy_regiment):
         def inside_of_grid(troop: Cannon):
             return 0 < self.battle_front.grid.positions[troop][0] < self.battle_front.grid.shape[0] and \
-                0 < self.battle_front.grid.positions[troop][1] < self.battle_front.grid.shape[0]
+                   0 < self.battle_front.grid.positions[troop][1] < self.battle_front.grid.shape[0]
 
         if not inside_of_grid(self):
             return
@@ -313,16 +317,39 @@ class Cannon(Unit):
             # store list of units in shock wave per distance from shot point
             shock_wave[i] = []
 
-        shock_wave[0].append(self.last_target)
+        # generate random dispersion of the cannon shot
+        x_dispersion = int(random.uniform(-self.dispersion, self.dispersion))
+        y_dispersion = int(random.uniform(-self.dispersion, self.dispersion))
 
-        for shot_neighbor in self.battle_front.grid.neighbors(self.last_target, distance=self.shot_radius).to_list():
+        # calculate point of shot
+        shot_point = [self.battle_front.grid.positions[self.last_target][0] + x_dispersion,
+                      self.battle_front.grid.positions[self.last_target][1] + y_dispersion]
+
+        # # check if x coord of shot point is inside of grid
+        shot_point[0] = 0 if shot_point[0] < 0 else (
+            shot_point[0] if shot_point[0] < self.battle_front.grid.shape[0] else self.battle_front.grid.shape[0])
+        # check if y coord of shot point is inside of grid
+        shot_point[1] = 0 if shot_point[1] < 0 else (
+            shot_point[1] if shot_point[1] < self.battle_front.grid.shape[1] else self.battle_front.grid.shape[1])
+
+        # calculate distance from shot point to all units in shock wave
+        for shot_neighbor in self.battle_front.grid.neighbors(self.last_target,
+                                                              distance=self.shot_radius + self.dispersion).to_list():
             if shot_neighbor.team != self.team and shot_neighbor in enemy_regiment.units:
                 # max distance from shot point along any axis
                 radius_from_shot = np.max(
-                    [abs(self.battle_front.grid.positions[shot_neighbor][0]-self.battle_front.grid.positions[self.last_target][0]),
-                    abs(self.battle_front.grid.positions[shot_neighbor][1] - self.battle_front.grid.positions[self.last_target][1])]
+                    [abs(self.battle_front.grid.positions[shot_neighbor][0] -
+                         shot_point[0]),
+                     abs(self.battle_front.grid.positions[shot_neighbor][1] -
+                         shot_point[1])]
                 )
-                shock_wave[radius_from_shot].append(shot_neighbor)
+                if radius_from_shot <= self.shot_radius:
+                    shock_wave[radius_from_shot].append(shot_neighbor)
+
+        # logging
+        if self.logging:
+            print(f'Shot point: x={shot_point[0]}, y={shot_point[1]}')
+            print(f'Enemies in shock wave: {shock_wave}')
 
         # attack units within shock wave
         for distance, units in shock_wave.items():
