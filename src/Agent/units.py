@@ -269,3 +269,88 @@ class HorseArcher(Unit):
         y_diff = self.last_target.pos[1] - self.pos[1]
 
         return int(np.clip(self.pos[0] - x_diff, 0, 400)), int(np.clip(self.pos[1] - y_diff, 0, 400))
+
+
+class Cannon(Unit):
+    reload_time: int
+    reload_counter: int
+    shot_radius: int
+
+    def __init__(self, model, *args, **kwargs):
+        super().__init__(model, *args, **kwargs)
+
+    # TODO: model parameters might need to be improved
+    def setup(self, **kwargs):  # remember: attributes are inherited from Unit superclass
+        self.speed = 1
+        self.regiment_order = Orders.MoveAndAttack
+        # self.team has to be set outside, by regiment
+        self.health = 100
+        self.damage = 15  # Somehow that doesn't work, it takes damage value  from superclass...
+        self.status = Status.Fighting.value
+        self.range = 30
+        self.shot_radius = 3
+        # how many steps skip until next attack
+        self.reload_time = 7
+        # increase every step, when it reaches reload_time, attack and reset
+        self.reload_counter = 0
+
+    def __attack(self, enemy_regiment):
+        def inside_of_grid(troop: Cannon):
+            return 0 < self.battle_front.grid.positions[troop][0] < self.battle_front.grid.shape[0] and \
+                0 < self.battle_front.grid.positions[troop][1] < self.battle_front.grid.shape[0]
+
+        if not inside_of_grid(self):
+            return
+
+        # check if cannon loaded
+        if self.reload_counter < self.reload_time:
+            self.reload_counter += 1
+            return
+
+        # cannon attacks the first found enemy, damage decreases with distance from the shot point
+        shock_wave = {}
+        for i in range(self.shot_radius + 1):
+            # store list of units in shock wave per distance from shot point
+            shock_wave[i] = []
+
+        shock_wave[0].append(self.last_target)
+
+        for shot_neighbor in self.battle_front.grid.neighbors(self.last_target, distance=self.shot_radius).to_list():
+            if shot_neighbor.team != self.team and shot_neighbor in enemy_regiment.units:
+                # max distance from shot point along any axis
+                radius_from_shot = np.max(
+                    [abs(self.battle_front.grid.positions[shot_neighbor][0]-self.battle_front.grid.positions[self.last_target][0]),
+                    abs(self.battle_front.grid.positions[shot_neighbor][1] - self.battle_front.grid.positions[self.last_target][1])]
+                )
+                shock_wave[radius_from_shot].append(shot_neighbor)
+
+        # attack units within shock wave
+        for distance, units in shock_wave.items():
+            for unit in units:
+                # damage decreases with distance from shot point
+                unit.health -= self.damage / (distance + 1)
+                # # if cannon killed enemy
+                if unit.health <= 0:
+                    unit.status = Status.Dead.value
+
+    def take_action(self, enemy_regiment, enemy_position: Tuple[int, int], regiment_position: Tuple[int, int]):
+        match self.regiment_order:
+            case Orders.MoveAndAttack:
+                if self.last_target is not None:
+                    self.__attack(enemy_regiment)
+                self.__calculatePath(enemy_position)
+                start = (len(self.path) > self.speed) * self.speed + (len(self.path) <= self.speed) * (
+                        len(self.path) - 1)
+                # if cannon has enemies in range, it will stop moving and start attack locally
+                if self.last_target is not None:
+                    return
+                # if no enemies in range, cannon will move to the next position
+                for i in range(start, -1, -1):
+                    if self.path[i] in self.battle_front.grid.empty:
+                        vector = (self.path[i][0] - self.pos[0], self.path[i][1] - self.pos[1])
+                        self.battle_front.grid.move_by(self, vector)
+                        break
+                self.pos = self.battle_front.grid.positions[self]
+
+    def __calculatePath(self, enemy_position: Tuple[int, int]):
+        self.path = self.battle_front.shortest_path(self.pos, enemy_position)
