@@ -168,11 +168,11 @@ class Game:
                 # if row + self.camera.x < len(grid[0]) and column + self.camera.y < len(grid):
 
                 if grid[row + self.camera.x][column + self.camera.y] == 2:
-                    self.screen.blit(self.axe[self.camera.size], (cells_size * row, cells_size * column))
+                    self.screen.blit(self.infantry_red[self.camera.size], (cells_size * row, cells_size * column))
                     continue
 
                 elif grid[row + self.camera.x][column + self.camera.y] == 3:
-                    self.screen.blit(self.spear[self.camera.size], (cells_size * row, cells_size * column))
+                    self.screen.blit(self.infantry_blue[self.camera.size], (cells_size * row, cells_size * column))
                     continue
 
 
@@ -208,19 +208,17 @@ class Game:
                                   cells_size])
 
     def __load_sprites(self):
-        sheet = pygame.image.load("src/Visualization/Sprites/soldiers.png").convert()
-        axe = sheet.subsurface(pygame.Rect(0, 0, 80, 80)).copy()
-        spear = sheet.subsurface(pygame.Rect(80*3, 0, 80, 80)).copy()
-        self.axe = [pygame.transform.scale(axe, (self.WINDOW_SIZE[0] / size, self.WINDOW_SIZE[1] / size)) for size in self.camera.allowed_width]
+        blue_unit = pygame.image.load("src/Visualization/Sprites/infantry_blue.png").convert()
+        red_unit = pygame.image.load("src/Visualization/Sprites/infantry_red.png").convert()
 
-        for axe in self.axe:
-            axe.set_colorkey((255, 255, 255))
+        self.infantry_red = [pygame.transform.scale(blue_unit, (self.WINDOW_SIZE[0] / size, self.WINDOW_SIZE[1] / size)) for size in self.camera.allowed_width]
 
-        self.spear = [pygame.transform.scale(spear, (self.WINDOW_SIZE[0] / size, self.WINDOW_SIZE[1] / size)) for size in self.camera.allowed_width]
-        for spear in self.spear:
-            spear.set_colorkey((255, 255, 255))
+        for blue_unit in self.infantry_red:
+            blue_unit.set_colorkey((255, 255, 255))
 
-
+        self.infantry_blue = [pygame.transform.scale(red_unit, (self.WINDOW_SIZE[0] / size, self.WINDOW_SIZE[1] / size)) for size in self.camera.allowed_width]
+        for red_unit in self.infantry_blue:
+            red_unit.set_colorkey((255, 255, 255))
 
 
     def __prepare_texture(self):
