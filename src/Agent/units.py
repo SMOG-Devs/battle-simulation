@@ -433,6 +433,5 @@ class Hussar(Unit):
         self.path = self.battle_front.shortest_path(self.pos, enemy_position)
 
     def __fallBack(self, enemy_position: Tuple[int, int]):
-        turning_position = [i+5 for i in enemy_position]
+        turning_position = [i+math.floor(random.random()*10) for i in enemy_position]
         self.path = turning_position
-        # self.path = self.battle_front.shortest_path(self.pos, [i+math.floor(random.random()*10) for i in enemy_position])
