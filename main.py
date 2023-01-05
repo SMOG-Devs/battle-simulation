@@ -22,7 +22,7 @@ def debug_mode(parameters: dict, steps: int = 100, filename: str = 'logs/b.plk')
 
 
 if __name__ == '__main__':
-    build_and_run(sample.sample_model6, 100, 'logs/b.plk')
+    build_and_run(sample.sample_model7, 1000, 'logs/b.plk')
 
     # Example for building only:
     # build(sample.sample_model2, 20, 'logs/b.plk')

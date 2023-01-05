@@ -4,6 +4,7 @@ from typing import Tuple, Dict, List, Optional
 
 import agentpy as ap
 import random
+import math
 
 import numpy as np
 
@@ -381,3 +382,79 @@ class Cannon(Unit):
 
     def __calculatePath(self, enemy_position: Tuple[int, int]):
         self.path = self.battle_front.shortest_path(self.pos, enemy_position)
+
+class Hussar(Unit):
+    stopped: bool
+    turning_time: int
+    turning_counter: int
+    accuracy_by_speed: float
+    damage: int
+    speed: int
+
+    def __init__(self, model, *args, **kwargs):
+        super().__init__(model, *args, **kwargs)
+
+    def setup(self, **kwargs):  # remember: attributes are inherited from Unit superclass
+        self.speed = 8
+        self.regiment_order = Orders.MoveAndAttack
+        # self.tema has to be set outside, by regiment
+        self.health = 60
+        self.damage = 20  # Somehow that doesn't work, it takes damage value  from superclass...
+        self.status = Status.Fighting.value
+        self.range = 2
+        # in attack it is correlated with a speed
+        self.accuracy_by_speed = 0.25
+        # how many steps skip until next attack, beacuse of turning 
+        self.turning_time = 3
+        # increase every step, when it reaches turning_time, attack and reset
+        self.turning_counter = 0
+        self.stopped = False
+
+    def __attack(self, enemy_regiment):
+        def inside_of_grid(troop: Unit):
+            return 0 < self.battle_front.grid.positions[troop][0] < self.battle_front.grid.shape[0] and \
+                0 < self.battle_front.grid.positions[troop][1] < self.battle_front.grid.shape[0]
+
+        if not inside_of_grid(self):
+            return
+
+        # check if hussar is turned
+        if self.turning_counter < self.turning_time:
+            self.turning_counter += 1
+            return
+
+        # attack the first found neighbour from opposite team
+        # break to not attack all neighbours but only the first one
+        self.last_target.health -=  (random.random() < self.accuracy_by_speed) * self.speed * self.damage
+        # if hussar killed enemy
+        if self.last_target.health <= 0:
+            self.last_target.status = Status.Dead
+
+    def take_action(self, enemy_regiment, enemy_position: Tuple[int, int], regiment_position: Tuple[int, int]):
+        match self.regiment_order:
+            case Orders.MoveAndAttack:
+                if self.last_target is not None:
+                    self.__attack(enemy_regiment)
+                    self.stopped = True
+                
+                # When hussar gett stopped, 
+                if self.last_target is not None and self.stopped:
+                    self.__fallBack(enemy_position)
+                else:
+                    self.__calculatePath(enemy_position)
+
+                start = (len(self.path) > self.speed) * self.speed + (len(self.path) <= self.speed) * (
+                        len(self.path) - 1)
+
+                for i in range(start, -1, -1):
+                    if self.path[i] in self.battle_front.grid.empty:
+                        vector = (self.path[i][0] - self.pos[0], self.path[i][1] - self.pos[1])
+                        self.battle_front.grid.move_by(self, vector)
+                        break
+                self.pos = self.battle_front.grid.positions[self]
+
+    def __calculatePath(self, enemy_position: Tuple[int, int]):
+        self.path = self.battle_front.shortest_path(self.pos, enemy_position)
+
+    def __fallBack(self, enemy_position: Tuple[int, int]):
+        self.path = self.battle_front.shortest_path(self.pos, [i+math.floor(random.random()*5) for i in enemy_position])

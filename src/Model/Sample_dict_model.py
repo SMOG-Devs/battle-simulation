@@ -116,3 +116,15 @@ sample_model6 = {
     },
     'infantry_speed': 1
 }
+
+sample_model7 = {
+    'army_dist': {
+        Agent_type.HUSSAR_BLUE: {
+            'quantity': [7, 5],
+            'position': [(150, 100), (150,120)]},
+        Agent_type.HUSSAR_RED: {
+            'quantity': [6, 6],
+            'position': [(200, 100), (200, 120)]},
+    },
+    'infantry_speed': 1
+}
