@@ -56,3 +56,51 @@ sample_model5 = {
     },
     'infantry_speed': 1
 }
+
+model_test = {
+    'army_dist': {
+        Agent_type.INFANTRY2_RED: {
+            'quantity': [20],
+            'position': [(10, 10)]},
+        Agent_type.INFANTRY2_BLUE: {
+            'quantity': [20],
+            'position': [(80, 20)]}
+    },
+    'infantry_speed': 1
+}
+
+model_test2 = {
+    'army_dist': {
+        Agent_type.INFANTRY2_RED: {
+            'quantity': [40],
+            'position': [(130, 100)]},
+        Agent_type.INFANTRY2_BLUE: {
+            'quantity': [40],
+            'position': [(100, 50)]}
+    },
+    'infantry_speed': 1
+}
+
+model_test_big = {
+    'army_dist': {
+        Agent_type.INFANTRY2_RED: {
+            'quantity': [1000, 1000, 2000],
+            'position': [(40, 40), (110, 50), (300, 90)]},
+        Agent_type.INFANTRY2_BLUE: {
+            'quantity': [1000, 1000, 2000],
+            'position': [(330, 220), (240, 240), (100, 200)]}
+    },
+    'infantry_speed': 1
+}
+
+model_test_straight_lines = {
+    'army_dist': {
+        Agent_type.INFANTRY2_RED: {
+            'quantity': [36, 36, 36, 36],
+            'position': [(10, 40), (10, 250), (240, 100), (270, 340)]},
+        Agent_type.INFANTRY2_BLUE: {
+            'quantity': [36, 36, 36, 36],
+            'position': [(10, 100), (90, 250), (240, 30), (380, 380)]}
+    },
+    'infantry_speed': 1
+}
