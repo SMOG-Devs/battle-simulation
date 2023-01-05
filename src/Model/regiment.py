@@ -10,7 +10,7 @@ from src.Agent.unit import Team, Orders
 from .World.World import World
 import src.Agent.order_decider as general
 import src.Agent.units as u
-
+from math import atan2
 
 class Regiment:
     regiments: List = []  # static variable, contains all regiments
@@ -18,6 +18,7 @@ class Regiment:
     battlefield: World = None
     type: Agent_type
     positions = set()
+    degree: float
 
     @staticmethod  # call it first before creating any object Regiment
     def setup(model: ap.Model, grid: World):
@@ -62,6 +63,7 @@ class Regiment:
         match agent_type:
             case u.Reiter:
                 self.__establish_rows()
+                self.degree = 0
 
     def __establish_rows(self):
         curr_y = 0
@@ -99,22 +101,32 @@ class Regiment:
         position = self.__centroid_of_regiment()
         match self.type:
             case u.Reiter:
-                reiter_path = self.battlefield.shortest_path(self.__centroid_of_regiment(), target[0])
+                position_of_regiment = self.__centroid_of_regiment()
+                reiter_path = self.battlefield.shortest_path(position_of_regiment, target[0])
                 reiter_speed = (len(reiter_path) > self.units[0].speed) * self.units[0].speed
                 self.__establish_order()
-                print(f'-------------{reiter_speed}')
+                x_diff = target[0][0] - position_of_regiment[0]
+                y_diff = target[0][1] - position_of_regiment[1]
+                m = atan2(y_diff, x_diff)
+                sign = 1
+                if self.degree > m:
+                    sign *= -1
+                if abs(self.degree - m) > np.pi:
+                    sign *= -1
+                angle = 0
+                if np.pi >= abs(self.degree - m) > .25*np.pi or np.pi >= 2*np.pi - abs(self.degree - m) > .25*np.pi:
+                    angle = sign * .25*np.pi
                 while True and reiter_speed >= 0:
                     new_pos = reiter_path[reiter_speed]
                     move = (new_pos[0] - position[0], new_pos[1] - position[1])
-                    print('tired')
                     try:
-                        self.units.check_availability(move, self.__centroid_of_regiment(), self.positions)
-                        self.units.take_action(target[1], target[0], self.__centroid_of_regiment(), move)
+                        self.units.check_availability(move, position_of_regiment, self.positions, angle)
+                        self.units.take_action(target[1], target[0], position_of_regiment, move,angle)
                         self.positions = set(self.units.pos)
+                        self.degree += angle
                         break
                     except Exception:
                         reiter_speed -= 1
-                print(f'------------{reiter_speed}')
 
 
 

@@ -309,11 +309,12 @@ class Reiter(Unit):
         # self.pos = self.battle_front.grid.positions[self]
         centre_vector = (self.pos[0] - regiment_center[0], self.pos[1] - regiment_center[1])
         new_vector = np.round(self.__spin_point(centre_vector, angle))
-        new_pos = (-centre_vector[0] + new_vector[0] + vector[1], -centre_vector[1] + vector[1] + new_vector[1])
+        new_pos = (-centre_vector[0] + new_vector[0], -centre_vector[1] + new_vector[1])
         #print(vector, centre_vector, new_vector, self.pos, regiment_center)
         match self.regiment_order:
             case Orders.Move:
                 self.battle_front.grid.move_by(self,new_pos)
+                #self.battle_front.grid.move_by(self,vector)
                 self.pos = (self.pos[0] + new_pos[0], self.pos[1] + new_pos[1])
 
     def check_availability(self, vector, regiment_center, position_set, spin=.25*np.pi):

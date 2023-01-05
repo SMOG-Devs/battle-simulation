@@ -52,7 +52,7 @@ sample_model5 = {
             'position': [(100, 20), (20, 20)]},
         Agent_type.REITERS_BLUE: {
             'quantity': [20, 30],
-            'position': [(40, 20), (20, 220)]}
+            'position': [(140, 220), (20, 220)]}
     },
     'infantry_speed': 1
 }
