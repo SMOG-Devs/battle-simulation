@@ -1,19 +1,22 @@
 from __future__ import annotations
 
 from math import sqrt
-from typing import Tuple, List, Dict
+from typing import Tuple, List
 
 import agentpy as ap
 from .model_constants import Agent_type
 import numpy as np
-from src.Agent.unit import Team
+from src.Agent.unit import Team, Orders
 from .World.World import World
+import src.Agent.order_decider as general
+import src.Agent.units as u
 
 
 class Regiment:
     regiments: List = []  # static variable, contains all regiments
     model: ap.Model = None
     battlefield: World = None
+    type: Agent_type
 
     @staticmethod  # call it first before creating any object Regiment
     def setup(model: ap.Model, grid: World):
@@ -35,7 +38,7 @@ class Regiment:
         y_range = y + (units_per_line + square) * 2
 
         assert not any(x <= curr_x <= x_range and y <= curr_y <= y_range for curr_x, curr_y in
-                        Regiment.battlefield.grid.positions.values()), 'Two regiments are interceptingi'
+                        Regiment.battlefield.grid.positions.values()), 'Two regiments are intercepting'
 
         for i in range(1, quantity + 1):
             positions.append((x, y))
@@ -54,26 +57,17 @@ class Regiment:
         self.units.setup_map_binding(self.battlefield)
         self.units.team = team
         self.team = team
+        self.type = agent_type
 
     def units_count(self) -> int:
         return len(self.units)
 
-    def move(self, reversed_positions:  Dict[Tuple[int, int], List[ap.Agent]]):
+    def __establish_order(self):
+        match self.type:
+            case u.HorseArcher | u.HorseArcher:
+                self.units.regiment_order = general.generate_order_horse_archers(self.units)
 
-        def direction_to(regiment: Regiment) -> (float, float):
-            # TODO: make if faster
-
-            x = regiment.__centroid_of_regiment()[0] - self.__centroid_of_regiment()[0]
-            y = regiment.__centroid_of_regiment()[1] - self.__centroid_of_regiment()[1]
-            dis = np.linalg.norm((x, y))
-            # if regiments are on top of each other, return default
-            if dis < 1:
-                return 0, 0
-            x = x / dis
-            y = y / dis
-            x = round(x)
-            y = round(y)
-            return x, y
+    def take_action(self):
 
         target: ((int, int), Regiment) = self.__closest_regiment()  # Remember: it contains ((int, int), Regiment)
         if target is None:
@@ -82,12 +76,9 @@ class Regiment:
             return  # This shouldn't happen, where there is no enemy, battle is won
 
         # direction = direction_to(target[1]) we don't pass direction, we pass enemy and self centroid tuples instead
-        self.units.move(target[0], self.__centroid_of_regiment())
-
-    def attack(self):
-        #  in future it may require target Regiment
-        for unit in self.units:
-            unit.attack(None)
+        self.units.find_target(target[1])
+        self.__establish_order()
+        self.units.take_action(target[1], target[0], self.__centroid_of_regiment())
 
     def remove_dead(self):
         # Regiment.battlefield.remove_agents(self.units.select(self.units.health <= 0)) # doesn't work, idk why

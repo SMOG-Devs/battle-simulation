@@ -104,3 +104,15 @@ model_test_straight_lines = {
     },
     'infantry_speed': 1
 }
+
+sample_model6 = {
+    'army_dist': {
+        Agent_type.CANNON_RED: {
+            'quantity': [1],
+            'position': [(40, 220)]},
+        Agent_type.INFANTRY2_BLUE: {
+            'quantity': [50],
+            'position': [(40, 240)]}
+    },
+    'infantry_speed': 1
+}

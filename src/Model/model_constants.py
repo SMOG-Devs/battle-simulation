@@ -1,6 +1,6 @@
 from enum import Enum
 from . import Dummy_Classes
-from src.Agent.units import Soldier, Infantry
+from src.Agent.units import Soldier, Infantry, HorseArcher, Cannon
 
 from ..Agent.units import Soldier
 from src.Agent.unit import Team
@@ -26,7 +26,11 @@ class Agent_type(Enum):
 
     INFANTRY2_BLUE = (Infantry, Team.BLUE)
     INFANTRY2_RED = (Infantry, Team.RED)
+    HORSE_ARCHER_BLUE = (HorseArcher, Team.BLUE)
+    HORSE_ARCHER_RED = (HorseArcher, Team.RED)
 
+    CANNON_BLUE = (Cannon, Team.BLUE)
+    CANNON_RED = (Cannon, Team.RED)
 
 
 
