@@ -410,9 +410,12 @@ class Hussar(Unit):
                     self.__attack(enemy_regiment)
                     self.stopped = True
                 
+                # self.__calculatePath(enemy_position)
+
                 # When hussar gett stopped, 
-                if self.last_target is not None and self.stopped:
+                if self.stopped:
                     self.__fallBack(enemy_position)
+                    self.stopped = False
                 else:
                     self.__calculatePath(enemy_position)
 
@@ -430,4 +433,6 @@ class Hussar(Unit):
         self.path = self.battle_front.shortest_path(self.pos, enemy_position)
 
     def __fallBack(self, enemy_position: Tuple[int, int]):
-        self.path = self.battle_front.shortest_path(self.pos, [i+math.floor(random.random()*5) for i in enemy_position])
+        turning_position = [i+5 for i in enemy_position]
+        self.path = turning_position
+        # self.path = self.battle_front.shortest_path(self.pos, [i+math.floor(random.random()*10) for i in enemy_position])
