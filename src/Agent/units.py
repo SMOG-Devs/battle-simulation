@@ -288,12 +288,12 @@ class Cannon(Unit):
         self.regiment_order = Orders.MoveAndAttack
         # self.team has to be set outside, by regiment
         self.health = 100
-        self.damage = 15  # Somehow that doesn't work, it takes damage value  from superclass...
+        self.damage = 100  # Somehow that doesn't work, it takes damage value  from superclass...
         self.status = Status.Fighting.value
-        self.range = 30
-        self.shot_radius = 3
+        self.range = 100
+        self.shot_radius = 5
         # how many steps skip until next attack
-        self.reload_time = 7
+        self.reload_time = 100
         # increase every step, when it reaches reload_time, attack and reset
         self.reload_counter = 0
         self.dispersion = 3
