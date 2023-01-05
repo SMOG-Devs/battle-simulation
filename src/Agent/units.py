@@ -277,6 +277,7 @@ class Cannon(Unit):
     reload_counter: int
     shot_radius: int
     dispersion: int
+    speed: int
     logging: bool
 
 
@@ -284,16 +285,16 @@ class Cannon(Unit):
         super().__init__(model, *args, **kwargs)
 
     def setup(self, **kwargs):  # remember: attributes are inherited from Unit superclass
-        self.speed = 1
+        self.speed = 3
         self.regiment_order = Orders.MoveAndAttack
         # self.team has to be set outside, by regiment
-        self.health = 100
-        self.damage = 15  # Somehow that doesn't work, it takes damage value  from superclass...
+        self.health = 250
+        self.damage = 100  # Somehow that doesn't work, it takes damage value  from superclass...
         self.status = Status.Fighting.value
-        self.range = 30
-        self.shot_radius = 3
+        self.range = 100
+        self.shot_radius = 4
         # how many steps skip until next attack
-        self.reload_time = 7
+        self.reload_time = 100
         # increase every step, when it reaches reload_time, attack and reset
         self.reload_counter = 0
         self.dispersion = 3
