@@ -119,12 +119,12 @@ sample_model6 = {
 
 sample_model7 = {
     'army_dist': {
-        Agent_type.HUSSAR_BLUE: {
-            'quantity': [7, 5],
-            'position': [(150, 100), (150,120)]},
-        Agent_type.HUSSAR_RED: {
-            'quantity': [6, 6],
-            'position': [(200, 100), (200, 120)]},
+        Agent_type.REITERS_BLUE: {
+            'quantity': [70, 50],
+            'position': [(15, 10), (150,12)]},
+        Agent_type.CANNON_RED: {
+            'quantity': [60, 60],
+            'position': [(200, 100), (200, 200)]},
     },
     'infantry_speed': 1
 }

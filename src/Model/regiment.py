@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from math import sqrt
-from typing import Tuple, List
+from typing import Tuple, List, Set
 
 import agentpy as ap
 from .model_constants import Agent_type
@@ -11,6 +11,7 @@ from .World.World import World
 import src.Agent.order_decider as general
 import src.Agent.units as u
 from math import atan2
+import random
 
 class Regiment:
     regiments: List = []  # static variable, contains all regiments
@@ -20,6 +21,7 @@ class Regiment:
     positions = set()
     degree: float
     attacking_row: int
+    rows: int
 
     @staticmethod  # call it first before creating any object Regiment
     def setup(model: ap.Model, grid: World):
@@ -68,13 +70,15 @@ class Regiment:
                 self.attacking_row = 1
 
     def __establish_rows(self):
-        curr_y = 0
+        curr_y = -1
         row_number = 0
         for unit in self.units:
             if curr_y != unit.pos[1]:
                 curr_y = unit.pos[1]
                 row_number += 1
             unit.row_number = row_number
+        self.rows = row_number
+
 
     def units_count(self) -> int:
         return len(self.units)
@@ -87,7 +91,10 @@ class Regiment:
                 row_number = 1
                 units = self.units.select(self.units.row_number == row_number)
                 while len(units) != 0:
-                    units.regiment_order = general.generate_order_reiters(units, self.attacking_row)
+                    order = general.generate_order_reiters(units, self.attacking_row)
+                    if order is not Orders.MoveAndAttack and self.attacking_row == row_number:
+                        self.attacking_row = (self.attacking_row + 1) % self.rows + 1
+                    units.regiment_order = order
                     row_number += 1
                     units = self.units.select(self.units.row_number == row_number)
 
@@ -101,11 +108,12 @@ class Regiment:
             return  # This shouldn't happen, where there is no enemy, battle is won
         # direction = direction_to(target[1]) we don't pass direction, we pass enemy and self centroid tuples instead
         position = self.__centroid_of_regiment()
+        direction = -1 + (np.linalg.norm([position[0] - target[0][0],position[1] - target[0][1]]) >= self.units[0].range - random.random()*20) * 2
         match self.type:
             case u.Reiter:
                 position_of_regiment = self.__centroid_of_regiment()
                 reiter_path = self.battlefield.shortest_path(position_of_regiment, target[0])
-                reiter_speed = (len(reiter_path) > self.units[0].speed) * self.units[0].speed
+                reiter_speed = (len(reiter_path) >= self.units[0].speed) * self.units[0].speed + (len(reiter_path) < self.units[0].speed) * (len(reiter_path) - 1)
                 self.units.find_target(target[1])
                 self.__establish_order()
                 x_diff = target[0][0] - position_of_regiment[0]
@@ -120,13 +128,15 @@ class Regiment:
                 if np.pi >= abs(self.degree - m) >= .25*np.pi or np.pi >= 2*np.pi - abs(self.degree - m) >= .25*np.pi:
                     angle = sign * .25*np.pi
                 while True and reiter_speed >= 0:
-                    new_pos = reiter_path[reiter_speed]
-                    move = (new_pos[0] - position[0], new_pos[1] - position[1])
                     try:
+                        new_pos = reiter_path[reiter_speed]
+                        move = (direction * (new_pos[0] - position[0]), direction * (new_pos[1] - position[1]))
                         self.units.check_availability(move, position_of_regiment, self.positions, angle)
                         self.units.take_action(target[1], target[0], position_of_regiment, move,angle)
                         self.positions = set(self.units.pos)
                         self.degree += angle
+                        break
+                    except IndexError:
                         break
                     except Exception:
                         reiter_speed -= 1
