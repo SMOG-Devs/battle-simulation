@@ -10,13 +10,16 @@ from src.Agent.unit import Team, Orders
 from .World.World import World
 import src.Agent.order_decider as general
 import src.Agent.units as u
-
+from math import atan2
 
 class Regiment:
     regiments: List = []  # static variable, contains all regiments
     model: ap.Model = None
     battlefield: World = None
     type: Agent_type
+    positions = set()
+    degree: float
+    attacking_row: int
 
     @staticmethod  # call it first before creating any object Regiment
     def setup(model: ap.Model, grid: World):
@@ -51,21 +54,43 @@ class Regiment:
 
     def __init__(self, quantity: int, agent_type: Agent_type, team: Team, position: (int, int)):
         self.units = ap.AgentList(Regiment.model, quantity, agent_type)
-        positions_for_soldiers = Regiment._generate_positions(quantity, position)
-        Regiment.battlefield.grid.add_agents(self.units, positions=positions_for_soldiers)
+        self.positions = Regiment._generate_positions(quantity, position)
+        Regiment.battlefield.grid.add_agents(self.units, positions=self.positions)
         Regiment._add_regiment(self)
         self.units.setup_map_binding(self.battlefield)
         self.units.team = team
         self.team = team
         self.type = agent_type
+        match agent_type:
+            case u.Reiter:
+                self.__establish_rows()
+                self.degree = 0
+                self.attacking_row = 1
+
+    def __establish_rows(self):
+        curr_y = 0
+        row_number = 0
+        for unit in self.units:
+            if curr_y != unit.pos[1]:
+                curr_y = unit.pos[1]
+                row_number += 1
+            unit.row_number = row_number
 
     def units_count(self) -> int:
         return len(self.units)
 
     def __establish_order(self):
         match self.type:
-            case u.HorseArcher | u.HorseArcher:
+            case u.HorseArcher:
                 self.units.regiment_order = general.generate_order_horse_archers(self.units)
+            case u.Reiter:
+                row_number = 1
+                units = self.units.select(self.units.row_number == row_number)
+                while len(units) != 0:
+                    units.regiment_order = general.generate_order_reiters(units, self.attacking_row)
+                    row_number += 1
+                    units = self.units.select(self.units.row_number == row_number)
+
 
     def take_action(self):
 
@@ -74,11 +99,45 @@ class Regiment:
             return
         if len(target[1].units) <= 0:
             return  # This shouldn't happen, where there is no enemy, battle is won
-
         # direction = direction_to(target[1]) we don't pass direction, we pass enemy and self centroid tuples instead
-        self.units.find_target(target[1])
-        self.__establish_order()
-        self.units.take_action(target[1], target[0], self.__centroid_of_regiment())
+        position = self.__centroid_of_regiment()
+        match self.type:
+            case u.Reiter:
+                position_of_regiment = self.__centroid_of_regiment()
+                reiter_path = self.battlefield.shortest_path(position_of_regiment, target[0])
+                reiter_speed = (len(reiter_path) > self.units[0].speed) * self.units[0].speed
+                self.units.find_target(target[1])
+                self.__establish_order()
+                x_diff = target[0][0] - position_of_regiment[0]
+                y_diff = target[0][1] - position_of_regiment[1]
+                m = atan2(y_diff, x_diff)
+                sign = 1
+                if self.degree > m:
+                    sign *= -1
+                if abs(self.degree - m) > np.pi:
+                    sign *= -1
+                angle = 0
+                if np.pi >= abs(self.degree - m) >= .25*np.pi or np.pi >= 2*np.pi - abs(self.degree - m) >= .25*np.pi:
+                    angle = sign * .25*np.pi
+                while True and reiter_speed >= 0:
+                    new_pos = reiter_path[reiter_speed]
+                    move = (new_pos[0] - position[0], new_pos[1] - position[1])
+                    try:
+                        self.units.check_availability(move, position_of_regiment, self.positions, angle)
+                        self.units.take_action(target[1], target[0], position_of_regiment, move,angle)
+                        self.positions = set(self.units.pos)
+                        self.degree += angle
+                        break
+                    except Exception:
+                        reiter_speed -= 1
+
+
+
+
+            case _:
+                self.units.find_target(target[1])
+                self.__establish_order()
+                self.units.take_action(target[1], target[0], self.__centroid_of_regiment())
 
     def remove_dead(self):
         # Regiment.battlefield.remove_agents(self.units.select(self.units.health <= 0)) # doesn't work, idk why

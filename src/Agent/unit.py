@@ -16,6 +16,7 @@ class Orders(Enum):
     MoveAndAttack = 1
     Wait = 2
     Move = 3
+    MoveAndReload = 4
 
 
 class Status(Enum):
