@@ -49,10 +49,10 @@ sample_model5 = {
     'army_dist': {
         Agent_type.REITERS_RED: {
             'quantity': [20, 30],
-            'position': [(100, 20), (20, 20)]},
+            'position': [(100, 20), (40, 20)]},
         Agent_type.REITERS_BLUE: {
             'quantity': [20, 30],
-            'position': [(140, 220), (20, 220)]}
+            'position': [(200, 32), (100, 82)]}
     },
     'infantry_speed': 1
 }

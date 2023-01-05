@@ -11,7 +11,7 @@ from src.Agent.unit import Unit
 from src.Agent.unit import Orders
 from src.Agent.unit import Status
 import random
-from .stats import HorseArcherStats, Stats
+from .stats import HorseArcherStats, Stats, ReiterStats
 
 
 class Soldier(ap.Agent):
@@ -142,7 +142,7 @@ class Infantry(Unit):
     def __attack(self, enemy_regiment):
         def inside_of_grid(troop: Infantry):
             return 0 < self.battle_front.grid.positions[troop][0] < self.battle_front.grid.shape[0] and \
-                0 < self.battle_front.grid.positions[troop][1] < self.battle_front.grid.shape[0]
+                   0 < self.battle_front.grid.positions[troop][1] < self.battle_front.grid.shape[0]
 
         if not inside_of_grid(self):
             return
@@ -207,7 +207,7 @@ class HorseArcher(Unit):
     def __attack(self, enemy_regiment):
         def inside_of_grid(troop: Unit):
             return 0 < self.battle_front.grid.positions[troop][0] < self.battle_front.grid.shape[0] and \
-                0 < self.battle_front.grid.positions[troop][1] < self.battle_front.grid.shape[0]
+                   0 < self.battle_front.grid.positions[troop][1] < self.battle_front.grid.shape[0]
 
         if not inside_of_grid(self):
             return
@@ -270,12 +270,17 @@ class HorseArcher(Unit):
 
         return int(np.clip(self.pos[0] - x_diff, 0, 400)), int(np.clip(self.pos[1] - y_diff, 0, 400))
 
+
 class Reiter(Unit):
     last_target: Optional[Unit]
     accuracy: float
     row_number: int
+    reload_time: int
+    reload_remaining: int
+
     def __init__(self, model, *args, **kwargs):
         super().__init__(model, *args, **kwargs)
+
     def setup(self, **kwargs):  # remember: attributes are inherited from Unit superclass
         self.speed = 6
         self.regiment_order = Orders.Move
@@ -285,8 +290,11 @@ class Reiter(Unit):
         self.range = 80
         self.accuracy = 0.65
         self.last_target = None
+        self.reload_remaining = 0
+        self.reload_time = 10
 
-    def take_action(self, enemy_regiment, enemy_position: Tuple[int, int], regiment_center: Tuple[int,int], vector: Tuple[int, int] = (0,0), angle = 0.25*np.pi):
+    def take_action(self, enemy_regiment, enemy_position: Tuple[int, int], regiment_center: Tuple[int, int],
+                    vector: Tuple[int, int] = (0, 0), angle=0.25 * np.pi):
         # match self.regiment_order:
         #     case Orders.MoveAndAttack:
         #         if self.last_target is None:
@@ -310,28 +318,66 @@ class Reiter(Unit):
         centre_vector = (self.pos[0] - regiment_center[0], self.pos[1] - regiment_center[1])
         new_vector = np.round(self.__spin_point(centre_vector, angle))
         new_pos = (-centre_vector[0] + new_vector[0], -centre_vector[1] + new_vector[1])
-        #print(vector, centre_vector, new_vector, self.pos, regiment_center)
+        # print(vector, centre_vector, new_vector, self.pos, regiment_center)
         match self.regiment_order:
-            case Orders.Move:
-                self.battle_front.grid.move_by(self,new_pos)
-                #self.battle_front.grid.move_by(self,vector)
-                self.pos = (self.pos[0] + new_pos[0], self.pos[1] + new_pos[1])
+            case Orders.MoveAndAttack:
+                self.__attack()
+            case Orders.MoveAndReload:
+                self.reload_remaining -= (self.reload_remaining > 0) 
+        self.battle_front.grid.move_by(self, new_pos)
+        self.battle_front.grid.move_by(self, vector)
+        self.pos = (self.pos[0] + new_pos[0] + vector[0], self.pos[1] + new_pos[1] + vector[1])
 
-    def check_availability(self, vector, regiment_center, position_set, spin=.25*np.pi):
+
+    def check_availability(self, vector, regiment_center, position_set, spin=.25 * np.pi):
         centre_vector = (self.pos[0] - regiment_center[0], self.pos[1] - regiment_center[1])
-        new_vector = self.__spin_point(centre_vector,spin)
-        new_pos = (-centre_vector[0] + vector[0] + new_vector[0] + self.pos[0], -centre_vector[1] + vector[1] + new_vector[1]+self.pos[1])
-        #print(f'new_pos{new_pos}, self.pos{self.pos}, new_vector{new_vector}, centre_vector{centre_vector}, vector{vector}')
-        if not (0 <= new_pos[0] < 400 and 0 <= new_pos[1] < 400 and (new_pos in self.battle_front.grid.empty or new_pos in position_set)):
+        new_vector = self.__spin_point(centre_vector, spin)
+        new_pos = (-centre_vector[0] + vector[0] + new_vector[0] + self.pos[0],
+                   -centre_vector[1] + vector[1] + new_vector[1] + self.pos[1])
+        # print(f'new_pos{new_pos}, self.pos{self.pos}, new_vector{new_vector}, centre_vector{centre_vector}, vector{vector}')
+        if not (0 <= new_pos[0] < 400 and 0 <= new_pos[1] < 400 and (
+                new_pos in self.battle_front.grid.empty or new_pos in position_set)):
             raise Exception
 
-    def __spin_point(self,point, angle):
-        x = point[0]*np.cos(angle) - point[1]*np.sin(angle)
-        y = point[0]*np.cos(angle) + point[1]*np.sin(angle)
+    def __spin_point(self, point, angle):
+        x = point[0] * np.cos(angle) - point[1] * np.sin(angle)
+        y = point[0] * np.sin(angle) + point[1] * np.cos(angle)
 
-        return round(x),round(y)
+        return round(x), round(y)
 
+    def find_target(self, enemy_regiment):
+        found = False
+        for neighbor in self.battle_front.grid.neighbors(self, distance=self.range).to_list():
+            if neighbor.team != self.team and neighbor in enemy_regiment.units:
+                self.last_target = neighbor
+                found = True
+                break
+        if not found:
+            self.last_target = None
 
+    def __calculate_distance_to_target(self) -> float:
+        if self.last_target is None:
+            return float('inf')
+        x_diff = self.pos[0] - self.last_target.pos[0]
+        y_diff = self.pos[1] - self.last_target.pos[1]
+        return np.linalg.norm([x_diff, y_diff])
 
+    def evaluate_situation(self) -> Stats:
+        return ReiterStats(readyToFire=(self.reload_remaining == 0), targetInRange=(self.last_target is not None))
+
+    def __attack(self):
+        def inside_of_grid(troop: Unit):
+            return 0 < self.battle_front.grid.positions[troop][0] < self.battle_front.grid.shape[0] and \
+                   0 < self.battle_front.grid.positions[troop][1] < self.battle_front.grid.shape[0]
+
+        if not inside_of_grid(self):
+            return
+
+        # attack the first found neighbour from opposite team
+        # break to not attack all neighbours but only the first one
+        self.last_target.health -= (random.random() < self.accuracy) * self.damage
+        # if soldier killed enemy
+        if self.last_target.health <= 0:
+            self.last_target.status = Status.Dead
 
 

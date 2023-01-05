@@ -19,6 +19,7 @@ class Regiment:
     type: Agent_type
     positions = set()
     degree: float
+    attacking_row: int
 
     @staticmethod  # call it first before creating any object Regiment
     def setup(model: ap.Model, grid: World):
@@ -64,6 +65,7 @@ class Regiment:
             case u.Reiter:
                 self.__establish_rows()
                 self.degree = 0
+                self.attacking_row = 1
 
     def __establish_rows(self):
         curr_y = 0
@@ -85,7 +87,7 @@ class Regiment:
                 row_number = 1
                 units = self.units.select(self.units.row_number == row_number)
                 while len(units) != 0:
-                    units.regiment_order = general.generate_order_reiters(units)
+                    units.regiment_order = general.generate_order_reiters(units, self.attacking_row)
                     row_number += 1
                     units = self.units.select(self.units.row_number == row_number)
 
@@ -104,6 +106,7 @@ class Regiment:
                 position_of_regiment = self.__centroid_of_regiment()
                 reiter_path = self.battlefield.shortest_path(position_of_regiment, target[0])
                 reiter_speed = (len(reiter_path) > self.units[0].speed) * self.units[0].speed
+                self.units.find_target(target[1])
                 self.__establish_order()
                 x_diff = target[0][0] - position_of_regiment[0]
                 y_diff = target[0][1] - position_of_regiment[1]
@@ -114,7 +117,7 @@ class Regiment:
                 if abs(self.degree - m) > np.pi:
                     sign *= -1
                 angle = 0
-                if np.pi >= abs(self.degree - m) > .25*np.pi or np.pi >= 2*np.pi - abs(self.degree - m) > .25*np.pi:
+                if np.pi >= abs(self.degree - m) >= .25*np.pi or np.pi >= 2*np.pi - abs(self.degree - m) >= .25*np.pi:
                     angle = sign * .25*np.pi
                 while True and reiter_speed >= 0:
                     new_pos = reiter_path[reiter_speed]
