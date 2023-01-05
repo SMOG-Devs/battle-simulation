@@ -101,9 +101,27 @@ class GridPickle(Grid):
                 color = 1
             else:
                 if unit_info[1] == 'Team.BLUE':  # team
-                    color = 2
+                    if unit_info[0] == 'Reiter':  # type
+                        color = 2
+                    elif unit_info[0] == 'Hussar':
+                        color = 3
+                    elif unit_info[0] == 'Cannon':
+                        color = 4
+                    elif unit_info[0] == 'HorseArcher':
+                        color = 5
+                    elif unit_info[0] == 'Infantry':
+                        color = 6
                 else:
-                    color = 3
+                    if unit_info[0] == 'Reiter':  # type
+                        color = 7
+                    elif unit_info[0] == 'Hussar':
+                        color = 8
+                    elif unit_info[0] == 'Cannon':
+                        color = 9
+                    elif unit_info[0] == 'HorseArcher':
+                        color = 10
+                    elif unit_info[0] == 'Infantry':
+                        color = 11
             self.grid[x][y] = color
 
     def get_description(self, x: int, y: int):

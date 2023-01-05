@@ -167,13 +167,38 @@ class Game:
                 # but it needs to have max_width the same as grid cell_count
                 # if row + self.camera.x < len(grid[0]) and column + self.camera.y < len(grid):
 
-                if grid[row + self.camera.x][column + self.camera.y] == 2:
-                    self.screen.blit(self.infantry_red[self.camera.size], (cells_size * row, cells_size * column))
-                    continue
+                unit_type = grid[row + self.camera.x][column + self.camera.y]
+                texture = []
+                if unit_type == 2:
+                    texture = self.rejter_blue[self.camera.size]
+                elif unit_type == 3:
+                    texture = self.hussar_blue[self.camera.size]
+                elif unit_type == 4:
+                    texture = self.cannon_blue[self.camera.size]
+                elif unit_type == 5:
+                    texture = self.rejter_blue[self.camera.size]
+                elif unit_type == 6:
+                    texture = self.infantry_blue[self.camera.size]
+                if unit_type == 7:
+                    texture = self.rejter_red[self.camera.size]
+                elif unit_type == 8:
+                    texture = self.hussar_red[self.camera.size]
+                elif unit_type == 9:
+                    texture = self.cannon_red[self.camera.size]
+                elif unit_type == 10:
+                    texture = self.rejter_red[self.camera.size]
+                elif unit_type == 11:
+                    texture = self.infantry_red[self.camera.size]
 
-                elif grid[row + self.camera.x][column + self.camera.y] == 3:
-                    self.screen.blit(self.infantry_blue[self.camera.size], (cells_size * row, cells_size * column))
-                    continue
+                self.screen.blit(texture, (cells_size * row, cells_size * column))
+
+                # if grid[row + self.camera.x][column + self.camera.y] == 2:
+                #     self.screen.blit(self.infantry_red[self.camera.size], (cells_size * row, cells_size * column))
+                #     continue
+                #
+                # elif grid[row + self.camera.x][column + self.camera.y] == 3:
+                #     self.screen.blit(self.infantry_blue[self.camera.size], (cells_size * row, cells_size * column))
+                #     continue
 
 
 
@@ -191,10 +216,10 @@ class Game:
                 if grid[row + self.camera.x][column + self.camera.y] == 1:
                     color = pygame.Color("black")
 
-                elif grid[row + self.camera.x][column + self.camera.y] == 2:
-                    color = pygame.Color("green")
+                elif 2 <= grid[row + self.camera.x][column + self.camera.y] <= 6:
+                    color = pygame.Color("blue")
 
-                elif grid[row + self.camera.x][column + self.camera.y] == 3:
+                elif 7 <= grid[row + self.camera.x][column + self.camera.y] <= 11:
                     color = pygame.Color("red")
 
                 elif grid[row + self.camera.x][column + self.camera.y] != 0:  # shouldn't happen
@@ -208,18 +233,56 @@ class Game:
                                   cells_size])
 
     def __load_sprites(self):
-        blue_unit = pygame.image.load("src/Visualization/Sprites/infantry_blue.png").convert()
-        red_unit = pygame.image.load("src/Visualization/Sprites/infantry_red.png").convert()
+        blue_infantry = pygame.image.load("src/Visualization/Sprites/infantry_blue.png").convert()
+        red_infantry = pygame.image.load("src/Visualization/Sprites/infantry_red.png").convert()
 
-        self.infantry_red = [pygame.transform.scale(blue_unit, (self.WINDOW_SIZE[0] / size, self.WINDOW_SIZE[1] / size)) for size in self.camera.allowed_width]
+        blue_cannon = pygame.image.load("src/Visualization/Sprites/canon_blue.png").convert()
+        red_cannon = pygame.image.load("src/Visualization/Sprites/canon_red.png").convert()
 
-        for blue_unit in self.infantry_red:
-            blue_unit.set_colorkey((255, 255, 255))
+        blue_cavalry = pygame.image.load("src/Visualization/Sprites/cavalry_blue.png").convert()
+        red_cavalry = pygame.image.load("src/Visualization/Sprites/cavalry_red.png").convert()
 
-        self.infantry_blue = [pygame.transform.scale(red_unit, (self.WINDOW_SIZE[0] / size, self.WINDOW_SIZE[1] / size)) for size in self.camera.allowed_width]
-        for red_unit in self.infantry_blue:
-            red_unit.set_colorkey((255, 255, 255))
+        blue_rajter = pygame.image.load("src/Visualization/Sprites/rajter_blue.png").convert()
+        red_rajter = pygame.image.load("src/Visualization/Sprites/rajter_red.png").convert()
 
+        self.infantry_blue = [pygame.transform.scale(blue_infantry, (self.WINDOW_SIZE[0] / size, self.WINDOW_SIZE[1] / size)) for size in self.camera.allowed_width]
+        for blue_infantry in self.infantry_blue:
+            blue_infantry.set_colorkey((255, 255, 255))
+
+        self.infantry_red = [pygame.transform.scale(red_infantry, (self.WINDOW_SIZE[0] / size, self.WINDOW_SIZE[1] / size)) for size in self.camera.allowed_width]
+        for red_infantry in self.infantry_red:
+            red_infantry.set_colorkey((255, 255, 255))
+
+        # hussars
+        self.hussar_blue = [pygame.transform.scale(blue_cavalry, (self.WINDOW_SIZE[0] / size, self.WINDOW_SIZE[1] / size))
+                          for size in self.camera.allowed_width]
+        for unit in self.hussar_blue:
+            unit.set_colorkey((255, 255, 255))
+        self.hussar_red = [pygame.transform.scale(red_cavalry, (self.WINDOW_SIZE[0] / size, self.WINDOW_SIZE[1] / size))
+                          for size in self.camera.allowed_width]
+        for unit in self.hussar_red:
+            unit.set_colorkey((255, 255, 255))
+
+        # rejters
+        self.rejter_blue = [pygame.transform.scale(blue_rajter, (self.WINDOW_SIZE[0] / size, self.WINDOW_SIZE[1] / size))
+                          for size in self.camera.allowed_width]
+        for unit in self.rejter_blue:
+            unit.set_colorkey((255, 255, 255))
+        self.rejter_red = [pygame.transform.scale(red_rajter, (self.WINDOW_SIZE[0] / size, self.WINDOW_SIZE[1] / size))
+                          for size in self.camera.allowed_width]
+        for unit in self.rejter_red:
+            unit.set_colorkey((255, 255, 255))
+
+        # cannons
+        self.cannon_blue = [
+            pygame.transform.scale(blue_cannon, (self.WINDOW_SIZE[0] / size, self.WINDOW_SIZE[1] / size))
+            for size in self.camera.allowed_width]
+        for unit in self.cannon_blue:
+            unit.set_colorkey((255, 255, 255))
+        self.cannon_red = [pygame.transform.scale(red_cannon, (self.WINDOW_SIZE[0] / size, self.WINDOW_SIZE[1] / size))
+                           for size in self.camera.allowed_width]
+        for unit in self.cannon_red:
+            unit.set_colorkey((255, 255, 255))
 
     def __prepare_texture(self):
         self.terrain_texture = pygame.Surface((400*32, 400*32))  # TODO: make it dynamic (size)
