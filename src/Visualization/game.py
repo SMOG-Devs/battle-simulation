@@ -11,7 +11,7 @@ class Game:
     def __init__(self, logs_path: str):
         pygame.init()
         self.FPS = 20
-        self.STEP_TIME = 2.0
+        self.STEP_TIME = 0.4
         self.WINDOW_SIZE = (800, 800)
         self.screen = pygame.display.set_mode(self.WINDOW_SIZE)
         pygame.display.set_caption("Battle")

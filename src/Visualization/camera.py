@@ -15,8 +15,8 @@ class Camera:
 
     def move(self, x: int, y: int):
         """Move camera on grid"""
-        self.x += x
-        self.y += y
+        self.x += x * self.width // 20
+        self.y += y * self.width // 20
         self._normalize_position()
 
     def zoom_in(self):
