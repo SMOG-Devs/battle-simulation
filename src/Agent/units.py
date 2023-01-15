@@ -400,7 +400,7 @@ class Hussar(Unit):
         self.speed = 8
         self.regiment_order = Orders.MoveAndAttack
         # self.tema has to be set outside, by regiment
-        self.health = 60
+        self.health = 200
         self.damage = 20  # Somehow that doesn't work, it takes damage value  from superclass...
         self.status = Status.Fighting.value
         self.range = 2
