@@ -5,6 +5,9 @@ from pygame import Color
 from .camera import Camera
 from .UI import Button
 from .grid import GridPickle, Terrain
+from pygame import mixer
+
+
 
 
 class Game:
@@ -31,6 +34,21 @@ class Game:
         # UI
         self.__button_start_stop: Button = None
 
+        # music
+        # Instantiate mixer
+        mixer.init()
+
+        # Load audio file
+        mixer.music.load('glorious_morning.mp3')
+
+        print("music started playing....")
+
+        # Set preferred volume
+        mixer.music.set_volume(0.2)
+
+        # Play the music
+        mixer.music.play()
+
         # run the game
         self.__load_sprites()
         self.__prepare_texture()
@@ -54,6 +72,14 @@ class Game:
             self.running = True
             self.__button_start_stop.set_text("STOP")
 
+    def __music_start_stop(self):
+        if mixer.music.get_busy():
+            mixer.music.pause()
+            self.__button_music.set_text("O")
+        else:
+            mixer.music.unpause()
+            self.__button_music.set_text("X")
+
     def __next_step(self):
         self.step += 1
         self.grid.step()
@@ -64,8 +90,11 @@ class Game:
 
     def __init_ui(self):
         color = pygame.Color(100, 100, 100)
+        # start/stop button is always first
+        # music button is second
         self.buttons = [
             Button(325 - 75, 730, 70, 70, "STOP", self.screen, color, self.__start_stop_simulation),
+            Button(0, 0, 20, 20, "O", self.screen, color, self.__music_start_stop),
             Button(325 - 150, 730, 70, 70, "|<=", self.screen, color, self.grid.to_start),
             Button(325, 730, 70, 70, "+", self.screen, color, self.__update_rate_plus),
             Button(325 + 75, 730, 70, 70, "-", self.screen, color, self.__update_rate_minus),
@@ -74,6 +103,7 @@ class Game:
         ]
 
         self.__button_start_stop = self.buttons[0]
+        self.__button_music = self.buttons[1]
 
     # render text with linebreaks (\n)
     def __draw_text(self, text: str, x: int, y: int, line_spacing: int = 2):
