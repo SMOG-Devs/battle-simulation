@@ -21,6 +21,7 @@ class BattleModel(ap.Model):
                                              int))]] = []  # list of frames, each frame have list of tuples: type, team, status, health, (positionX, positionY)
         # model manages regiments, regiments manages units
         self.stats = {}
+        self.soldier_count = dict()
 
     def setup(self):
         """ Initiate a list of new agents. """
@@ -144,6 +145,18 @@ class BattleModel(ap.Model):
         for unit in self.battle_field.grid.agents:
             current_frame.append((str(unit.type), str(unit.team), unit.status, unit.health,
                                   self.battle_field.grid.positions[unit]))
+        red_team = [unit for unit in self.battle_field.grid.agents if unit.team == Team.RED]
+        blue_team = [unit for unit in self.battle_field.grid.agents if unit.team == Team.BLUE]
+        red_stats = dict()
+        for soldier in red_team:
+            red_stats[str(soldier.type)] = red_stats.get(soldier.type, 0) + 1
+        red_stats["total"] = len(red_team)
+        blue_stats = dict()
+        for soldier in blue_team:
+            blue_stats[str(soldier.type)] = blue_stats.get(soldier.type, 0) + 1
+        blue_stats["total"] = len(blue_team)
+
+        self.soldier_count[self.t] = (red_stats, blue_stats)
         self.logs.append(current_frame)
 
     def save_logs_as_pickle(self, filename):
@@ -156,3 +169,6 @@ class BattleModel(ap.Model):
 
         with open(filename + ".txt", 'w') as file:
             file.write(stats)
+
+        with open(filename[:-4] + "-stats.plk", 'wb') as file:
+            pickle.dump(self.soldier_count, file)
