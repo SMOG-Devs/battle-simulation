@@ -190,6 +190,8 @@ class HorseArcher(Unit):
     accuracy: float
     damage: int
     speed: int
+    time_to_fire: int
+    reload_time: int
 
     def __init__(self, model, *args, **kwargs):
         super().__init__(model, *args, **kwargs)
@@ -204,6 +206,8 @@ class HorseArcher(Unit):
         self.range = 80
         self.accuracy = 0.65
         self.last_target = None
+        self.reload_time = 10
+        self.time_to_fire = 0
 
     def __attack(self, enemy_regiment):
         def inside_of_grid(troop: Unit):
@@ -215,10 +219,15 @@ class HorseArcher(Unit):
 
         # attack the first found neighbour from opposite team
         # break to not attack all neighbours but only the first one
-        self.last_target.health -= (random.random() < self.accuracy) * self.damage
-        # if soldier killed enemy
-        if self.last_target.health <= 0:
-            self.last_target.status = Status.Dead
+        if self.time_to_fire <= 0:
+            self.last_target.health -= (random.random() < self.accuracy) * self.damage
+            self.time_to_fire = self.reload_time
+            # if soldier killed enemy
+            if self.last_target.health <= 0:
+                self.last_target.status = Status.Dead
+        else:
+            self.time_to_fire -= 1
+
 
     def evaluate_situation(self) -> Stats:
         return HorseArcherStats(self.last_target is not None)
@@ -241,13 +250,14 @@ class HorseArcher(Unit):
         return np.linalg.norm([x_diff, y_diff])
 
     def take_action(self, enemy_regiment, enemy_position: Tuple[int, int], regiment_position: Tuple[int, int]):
+        self.time_to_fire -= (self.time_to_fire > 0)
         match self.regiment_order:
             case Orders.MoveAndAttack:
                 if self.last_target is None:
                     self.__calculatePath(enemy_position)
                 else:
                     self.__attack(enemy_regiment)
-                    if self.__calculate_distance_to_target() < self.last_target.range:
+                    if self.__calculate_distance_to_target() < .8 * self.range:
                         self.__calculatePath(self.__reverse_position())  # odwracamy współrzedne
                     else:
                         self.__calculatePath(self.last_target.pos)
@@ -400,7 +410,7 @@ class Hussar(Unit):
         self.speed = 8
         self.regiment_order = Orders.MoveAndAttack
         # self.tema has to be set outside, by regiment
-        self.health = 60
+        self.health = 200
         self.damage = 20  # Somehow that doesn't work, it takes damage value  from superclass...
         self.status = Status.Fighting.value
         self.range = 2

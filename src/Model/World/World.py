@@ -26,24 +26,19 @@ class World:
         :return: list of positions
         """
 
-        # if target is in straight line, move only in x or y direction
+        #if target is in straight line, move only in x or y direction
         x_diff = abs(start[0] - end[0])
         y_diff = abs(start[1] - end[1])
         if x_diff > y_diff * 4:
             if start[0] - end[0] > 0:
-                if (start[0] - 1, start[1]) in self.grid.empty:
-                    return [(start[0] - 1, start[1])]
+                return [(start[0] - i, start[1]) for i in range(foot_range)]
             else:
-                if (start[0] + 1, start[1]) in self.grid.empty:
-                    return [(start[0] + 1, start[1])]
-
+                return [(start[0] + i, start[1]) for i in range(foot_range)]
         if 4 * x_diff < y_diff:
             if start[1] - end[1] > 0:
-                if (start[0], start[1] - 1) in self.grid.empty:
-                    return [(start[0], start[1] - 1)]
+                return [(start[0], start[1] - i) for i in range(foot_range)]
             else:
-                if (start[0] + 1, start[1]) in self.grid.empty:
-                    return [(start[0], start[1] + 1)]
+                return [(start[0], start[1] + i) for i in range(foot_range)]
 
         @dataclass(order=True)
         class PrioritizedItem:
@@ -57,8 +52,6 @@ class World:
         open.put(PrioritizedItem(0, start))
         #search_area = self.__calculate_search_neighbourghood(start, foot_range)
         new_end = end
-        f = dict()
-        f[start] = abs(start[0] - end[0]) + abs(start[1] - end[1])  # f cost -> g cost + heuristic
         g = dict()  # g cost -> distance from starting node
         g[start] = 0
         prev = dict()
@@ -79,8 +72,7 @@ class World:
                 node = tuple(node)
                 new_g = g[current] + self.terrain.grid[node[0]][node[1]]
                 new_dist = new_g + heuristic(node, end)  # f cost
-                if node not in f or f[node] > new_dist:
-                    f[node] = new_dist  # self.grid[x][y] have weight of the move
+                if node not in g or g[node] > new_g:  # self.grid[x][y] have weight of the move
                     g[node] = new_g
                     prev[node] = current
                     open.put(PrioritizedItem(new_dist, node))

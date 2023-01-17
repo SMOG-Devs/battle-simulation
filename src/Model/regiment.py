@@ -42,6 +42,7 @@ class Regiment:
         x_range = x + units_per_line * 2
         y_range = y + (units_per_line + square) * 2
 
+
         assert not any(x <= curr_x <= x_range and y <= curr_y <= y_range for curr_x, curr_y in
                         Regiment.battlefield.grid.positions.values()), 'Two regiments are intercepting'
 
