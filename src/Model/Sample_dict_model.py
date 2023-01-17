@@ -188,3 +188,33 @@ Kokenhausen_real_model_bigger = {
     },
     'infantry_speed': 4
 }
+
+Kokenhausen_real_model_bigger_tatar = {
+    'army_dist':{
+        Agent_type.INFANTRY2_RED: {
+            'quantity': [40,10,10],
+            'position': [(120,125),(55,180),(55,200)]
+    },
+        Agent_type.HUSSAR_RED: {
+            'quantity': [200,100,100,100,80],
+            'position': [(65,180),(96,210),(126,210),(126,235),(120,140)]
+        },
+        Agent_type.CANNON_RED: {
+            'quantity': [2],
+            'position': [(55,190)]
+        },
+        Agent_type.INFANTRY2_BLUE: {
+            'quantity': [180],
+            'position': [(345,190)]
+        },
+        Agent_type.CANNON_BLUE: {
+            'quantity': [4],
+            'position': [(375,195)]
+        },
+        Agent_type.HORSE_ARCHER_BLUE: {
+            'quantity': [100,100,100,100,100,100,100,100],
+            'position': [(265,140),(285,160),(320,170),(345,160),(345,230),(320,210),(285,230),(265,250)]
+        }
+    },
+    'infantry_speed': 4
+}

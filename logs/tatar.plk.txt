@@ -1,0 +1,9 @@
+before battle red: 642
+before battle blue: 984
+after battle red: 0
+after battle blue: 793
+won: blue
+red died: 642
+blue died: 191
+red died historically: 100
+blue died historically: 2000

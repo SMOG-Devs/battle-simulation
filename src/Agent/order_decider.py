@@ -5,7 +5,7 @@ from .unit import Orders
 
 
 def generate_order_horse_archers(units: ap.AgentList) -> Orders:
-    ATTACK_THRESHOLD = 0.6
+    ATTACK_THRESHOLD = 0
 
     stats: List[HorseArcherStats] = []
     for unit in units:
